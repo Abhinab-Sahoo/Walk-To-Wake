@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph.xml"
+    app:startDestination="@id/stepCounterFragment">
+
+    <fragment
+        android:id="@+id/stepCounterFragment"
+        android:name="com.example.stepcounter.ui.stepcounter.StepCounterFragment"
+        android:label="fragment_step_counter"
+        tools:layout="@layout/fragment_step_counter" >
+        <action
+            android:id="@+id/action_stepCounterFragment_to_alarmFragment"
+            app:destination="@id/alarmFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/alarmFragment"
+        android:name="com.example.stepcounter.ui.alarm.AlarmFragment"
+        android:label="fragment_alarm"
+        tools:layout="@layout/fragment_alarm" />
+</navigation>
