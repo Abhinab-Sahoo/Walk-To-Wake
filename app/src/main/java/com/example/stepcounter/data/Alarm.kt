@@ -11,7 +11,8 @@ data class Alarm(
     val minute: Int,
     val daysOfWeek: Set<DayOfWeek>,
     val isEnabled: Boolean,
-    val label: String
+    val label: String,
+    val steps: Int = 0
 ) {
     val formattedTime: String
         get() {
