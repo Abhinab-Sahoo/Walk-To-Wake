@@ -15,9 +15,13 @@ class AlarmAdapter(
 
 
     class AlarmViewHolder(
-        private val binding: AlarmListBinding
+        val binding: AlarmListBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        fun bind(alarm: Alarm) {
+            binding.alarm = alarm
+            binding.executePendingBindings()
+        }
     }
 
     companion object DiffCallBack : DiffUtil.ItemCallback<Alarm>() {
@@ -38,6 +42,15 @@ class AlarmAdapter(
     }
 
     override fun onBindViewHolder(holder: AlarmViewHolder, position: Int) {
-        TODO("Not yet implemented")
+        val alarm = getItem(position)
+        holder.bind(alarm)
+
+        holder.itemView.setOnClickListener {
+            clickListener(alarm)
+        }
+
+        holder.binding.switchAlarmEnabled.setOnCheckedChangeListener { _, isChecked ->
+            switchClickListener(alarm, isChecked)
+        }
     }
 }
