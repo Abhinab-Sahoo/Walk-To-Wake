@@ -1,17 +1,22 @@
 package com.example.stepcounter.data
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+@Entity(tableName = "alarms")
 data class Alarm(
-    val id: Int,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
     val hour: Int,
     val minute: Int,
     val daysOfWeek: Set<DayOfWeek>,
     val isEnabled: Boolean,
-    val label: String
+    val label: String,
+    val steps: Int = 0
 ) {
     val formattedTime: String
         get() {

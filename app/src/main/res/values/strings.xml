@@ -4,4 +4,16 @@
     <string name="steps">Steps: %1$d</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="create_alarm">Create Alarm</string>
+    <string name="repeat_on">Repeat on</string>
+    <string name="steps_to_dismiss">Steps to dismiss</string>
+    <string name="save">Save</string>
+    <string name="monday_short">M</string>
+    <string name="tuesday_short">T</string>
+    <string name="wednesday_short">W</string>
+    <string name="thursday_short">T</string>
+    <string name="friday_short">F</string>
+    <string name="saturday_short">S</string>
+    <string name="sunday_short">S</string>
+    <string name="floating_add_button">Floating Add Button</string>
 </resources>
