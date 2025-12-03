@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -11,6 +12,7 @@ import java.time.format.DateTimeFormatter
 data class Alarm(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    val creationTimeInMillis: Long,
     val hour: Int,
     val minute: Int,
     val daysOfWeek: Set<DayOfWeek>,
@@ -29,5 +31,33 @@ data class Alarm(
         get() {
             val today = LocalDate.now().dayOfWeek
             return daysOfWeek.isEmpty() || daysOfWeek.contains(today)
+        }
+
+    val formattedDays: String
+        get() {
+            if (daysOfWeek.isEmpty()) {
+
+                if (!isEnabled) {
+                    return "Not scheduled"
+                }
+
+                val alarmDataTime = LocalTime.of(hour, minute).atDate(LocalDate.now())
+                return if (alarmDataTime.isBefore(LocalDateTime.now())) {
+                    "Tomorrow"
+                } else {
+                    "Today"
+                }
+            }
+
+            if (daysOfWeek.size == 7) {
+                return "Every day"
+            }
+
+            val sortedDays = daysOfWeek.sortedBy { it.value }
+
+            return sortedDays.joinToString(", ") { day ->
+                day.name.lowercase().take(3)
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            }
         }
 }

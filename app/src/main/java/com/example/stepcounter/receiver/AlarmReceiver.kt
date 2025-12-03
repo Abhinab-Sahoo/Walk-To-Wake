@@ -7,8 +7,19 @@ import android.media.RingtoneManager
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import com.example.stepcounter.data.AlarmRepository
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+
+@AndroidEntryPoint
 class AlarmReceiver : BroadcastReceiver() {
+
+    @Inject
+    lateinit var alarmRepository: AlarmRepository
 
     override fun onReceive(context: Context?, intent: Intent?) {
         val time = intent?.getStringExtra("alarm_time")
@@ -26,5 +37,21 @@ class AlarmReceiver : BroadcastReceiver() {
                 ringtone.stop()
             }
         }, 5000)
+
+        val alarmId = intent?.getLongExtra("ALARM_ID", -1L) ?: -1L
+        if (alarmId == -1L) {
+            return
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val alarm = alarmRepository.getAlarmByCreationTime(alarmId)
+
+            if (alarm != null) {
+                if (alarm.daysOfWeek.isEmpty()) {
+                    val updatedAlarm = alarm.copy(isEnabled = false)
+                    alarmRepository.updateAlarm(updatedAlarm)
+                }
+            }
+        }
     }
 }

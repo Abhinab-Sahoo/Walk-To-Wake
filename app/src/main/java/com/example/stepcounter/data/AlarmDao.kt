@@ -22,4 +22,7 @@ interface AlarmDao {
 
     @Query("SELECT * FROM alarms ORDER BY hour, minute ASC")
     fun getAllAlarms(): Flow<List<Alarm>>
+
+    @Query("SELECT * FROM alarms WHERE creationTimeInMillis = :creationTime LIMIT 1")
+    suspend fun getAlarmByCreationTime(creationTime: Long): Alarm?
 }

@@ -14,17 +14,23 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
 import com.example.stepcounter.receiver.AlarmReceiver
+import com.example.stepcounter.ui.alarm.AlarmViewModel
+import dagger.hilt.android.AndroidEntryPoint
 import java.time.DayOfWeek
 
 
+@AndroidEntryPoint
 class AddAlarmFragment : Fragment() {
 
     private var _binding: FragmentAddAlarmBinding? = null
     private val binding get() = _binding!!
     private lateinit var alarmManager: AlarmManager
+    private val alarmViewModel: AlarmViewModel by viewModels()
 
     private val requestExactAlarmPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -64,7 +70,7 @@ class AddAlarmFragment : Fragment() {
 
         val hour = binding.timePicker.hour
         val minute = binding.timePicker.minute
-        binding.stepsEditText.text.toString().toIntOrNull() ?: 0
+        val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
         val selectedDays = mutableSetOf<DayOfWeek>()
         if (binding.mondayChip.isChecked) selectedDays.add(DayOfWeek.MONDAY)
         if (binding.tuesdayChip.isChecked) selectedDays.add(DayOfWeek.TUESDAY)
@@ -73,6 +79,21 @@ class AddAlarmFragment : Fragment() {
         if (binding.fridayChip.isChecked) selectedDays.add(DayOfWeek.FRIDAY)
         if (binding.saturdayChip.isChecked) selectedDays.add(DayOfWeek.SATURDAY)
         if (binding.sundayChip.isChecked) selectedDays.add(DayOfWeek.SUNDAY)
+
+        val label = "Some Alarm"
+        val creationTime = System.currentTimeMillis()
+
+        val newAlarm = Alarm(
+            creationTimeInMillis = creationTime,
+            hour = hour,
+            minute = minute,
+            daysOfWeek = selectedDays,
+            isEnabled = true,
+            label = label,
+            steps = steps
+        )
+
+        alarmViewModel.insert(newAlarm)
 
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
@@ -87,11 +108,13 @@ class AddAlarmFragment : Fragment() {
             calendar.add(Calendar.DAY_OF_YEAR, 1)
         }
 
-        val alarmIntent = Intent(requireContext(), AlarmReceiver::class.java)
+        val alarmIntent = Intent(requireContext(), AlarmReceiver::class.java).apply {
+            putExtra("ALARM_ID", newAlarm.creationTimeInMillis)
+        }
 
         val pendingIntent = PendingIntent.getBroadcast(
             requireContext(),
-            System.currentTimeMillis().toInt(),
+            newAlarm.creationTimeInMillis.toInt(),
             alarmIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
