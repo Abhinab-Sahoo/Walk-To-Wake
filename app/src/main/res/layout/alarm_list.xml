@@ -41,7 +41,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text='@{alarm.label + " | Mon, Tue"}'
+                android:text='@{alarm.label + " | " + alarm.formattedDays }'
                 android:maxLines="1"
                 android:ellipsize="end"
                 app:layout_constraintEnd_toStartOf="@id/switch_alarm_enabled"
