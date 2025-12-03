@@ -96,7 +96,7 @@ class AlarmFragment : Fragment() {
 
         val pendingIntent = PendingIntent.getBroadcast(
             requireContext(),
-            alarm.creationTimeInMillis.toInt(),
+            alarm.id,
             alarmIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
