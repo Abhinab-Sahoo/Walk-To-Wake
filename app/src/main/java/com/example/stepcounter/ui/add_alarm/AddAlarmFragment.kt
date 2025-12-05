@@ -72,6 +72,7 @@ class AddAlarmFragment : Fragment() {
 
         val hour = binding.timePicker.hour
         val minute = binding.timePicker.minute
+        val label = binding.labelEditText.text.toString().ifEmpty { "Alarm" }
         val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
         val selectedDays = mutableSetOf<DayOfWeek>()
         if (binding.mondayChip.isChecked) selectedDays.add(DayOfWeek.MONDAY)
@@ -82,7 +83,6 @@ class AddAlarmFragment : Fragment() {
         if (binding.saturdayChip.isChecked) selectedDays.add(DayOfWeek.SATURDAY)
         if (binding.sundayChip.isChecked) selectedDays.add(DayOfWeek.SUNDAY)
 
-        val label = "Some Alarm"
 
         val newAlarm = Alarm(
             hour = hour,
