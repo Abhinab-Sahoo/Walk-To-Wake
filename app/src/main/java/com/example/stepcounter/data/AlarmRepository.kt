@@ -6,8 +6,8 @@ import javax.inject.Inject
 class AlarmRepository @Inject constructor(
     private val alarmDao: AlarmDao) {
 
-    suspend fun insertAlarm(alarm: Alarm) {
-        alarmDao.insert(alarm)
+    suspend fun insertAlarm(alarm: Alarm): Long {
+        return alarmDao.insert(alarm)
     }
 
     suspend fun updateAlarm(alarm: Alarm) {
@@ -22,7 +22,7 @@ class AlarmRepository @Inject constructor(
         return alarmDao.getAllAlarms()
     }
 
-    suspend fun getAlarmByCreationTime(creationTime: Long): Alarm? {
-        return alarmDao.getAlarmByCreationTime(creationTime)
+    suspend fun getAlarmById(creationTime: Int): Alarm? {
+        return alarmDao.getAlarmById(creationTime)
     }
 }

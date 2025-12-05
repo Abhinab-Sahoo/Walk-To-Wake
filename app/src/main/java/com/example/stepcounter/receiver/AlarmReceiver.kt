@@ -38,13 +38,13 @@ class AlarmReceiver : BroadcastReceiver() {
             }
         }, 5000)
 
-        val alarmId = intent?.getLongExtra("ALARM_ID", -1L) ?: -1L
-        if (alarmId == -1L) {
+        val alarmId = intent?.getIntExtra("ALARM_ID", -1) ?: -1
+        if (alarmId == -1) {
             return
         }
 
         CoroutineScope(Dispatchers.IO).launch {
-            val alarm = alarmRepository.getAlarmByCreationTime(alarmId)
+            val alarm = alarmRepository.getAlarmById(alarmId)
 
             if (alarm != null) {
                 if (alarm.daysOfWeek.isEmpty()) {

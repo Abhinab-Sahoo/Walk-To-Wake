@@ -5,10 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.data.AlarmRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
 
 @HiltViewModel
 class AlarmViewModel @Inject constructor(
@@ -17,10 +17,11 @@ class AlarmViewModel @Inject constructor(
 
     val alarms: Flow<List<Alarm>> = alarmRepository.getAllAlarms()
 
-    fun insert(alarm: Alarm) {
-        viewModelScope.launch {
+    suspend fun insert(alarm: Alarm): Long {
+        val deferredId = viewModelScope.async {
             alarmRepository.insertAlarm(alarm)
         }
+        return deferredId.await()
     }
 
     fun update(alarm: Alarm) {
@@ -28,5 +29,4 @@ class AlarmViewModel @Inject constructor(
             alarmRepository.updateAlarm(alarm)
         }
     }
-
 }
