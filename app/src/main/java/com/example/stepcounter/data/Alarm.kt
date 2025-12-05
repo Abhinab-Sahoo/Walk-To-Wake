@@ -12,7 +12,6 @@ import java.time.format.DateTimeFormatter
 data class Alarm(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val creationTimeInMillis: Long,
     val hour: Int,
     val minute: Int,
     val daysOfWeek: Set<DayOfWeek>,

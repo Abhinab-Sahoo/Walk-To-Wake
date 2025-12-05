@@ -43,7 +43,9 @@ class AlarmAdapter(
 
     override fun onBindViewHolder(holder: AlarmViewHolder, position: Int) {
         val alarm = getItem(position)
+        holder.binding.switchAlarmEnabled.setOnCheckedChangeListener(null)
         holder.bind(alarm)
+        holder.binding.switchAlarmEnabled.isChecked = alarm.isEnabled
 
         holder.itemView.setOnClickListener {
             clickListener(alarm)

@@ -91,7 +91,7 @@ class AlarmFragment : Fragment() {
             calendar.add(Calendar.DAY_OF_YEAR, 1)
         }
         val alarmIntent = Intent(requireContext(), AlarmReceiver::class.java).apply {
-            putExtra("ALARM_ID", alarm.creationTimeInMillis)
+            putExtra("ALARM_ID", alarm.id)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -113,7 +113,7 @@ class AlarmFragment : Fragment() {
 
         val pendingIntent = PendingIntent.getBroadcast(
             requireContext(),
-            alarm.creationTimeInMillis.toInt(),
+            alarm.id,
             alarmIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )

@@ -15,12 +15,14 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
 import com.example.stepcounter.receiver.AlarmReceiver
 import com.example.stepcounter.ui.alarm.AlarmViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 
 
@@ -36,7 +38,7 @@ class AddAlarmFragment : Fragment() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (alarmManager.canScheduleExactAlarms()) {
-                    scheduleAlarm()
+                    lifecycleScope.launch { scheduleAlarm() }
                 } else {
                     Toast.makeText(
                         requireContext(),
@@ -50,7 +52,7 @@ class AddAlarmFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         // Inflate the layout for this fragment
         _binding = FragmentAddAlarmBinding.inflate(inflater, container, false)
         alarmManager = requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -66,7 +68,7 @@ class AddAlarmFragment : Fragment() {
 
     }
 
-    private fun scheduleAlarm() {
+    private suspend fun scheduleAlarm() {
 
         val hour = binding.timePicker.hour
         val minute = binding.timePicker.minute
@@ -81,10 +83,8 @@ class AddAlarmFragment : Fragment() {
         if (binding.sundayChip.isChecked) selectedDays.add(DayOfWeek.SUNDAY)
 
         val label = "Some Alarm"
-        val creationTime = System.currentTimeMillis()
 
         val newAlarm = Alarm(
-            creationTimeInMillis = creationTime,
             hour = hour,
             minute = minute,
             daysOfWeek = selectedDays,
@@ -93,7 +93,7 @@ class AddAlarmFragment : Fragment() {
             steps = steps
         )
 
-        alarmViewModel.insert(newAlarm)
+        val alarmId = alarmViewModel.insert(newAlarm).toInt()
 
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
@@ -109,12 +109,12 @@ class AddAlarmFragment : Fragment() {
         }
 
         val alarmIntent = Intent(requireContext(), AlarmReceiver::class.java).apply {
-            putExtra("ALARM_ID", newAlarm.creationTimeInMillis)
+            putExtra("ALARM_ID", alarmId)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
             requireContext(),
-            newAlarm.creationTimeInMillis.toInt(),
+            alarmId,
             alarmIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
@@ -133,14 +133,15 @@ class AddAlarmFragment : Fragment() {
     private fun saveAlarmWithPermissionCheck() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (alarmManager.canScheduleExactAlarms()) {
-                scheduleAlarm()
+                lifecycleScope.launch { scheduleAlarm() }
             } else {
                 val intent = Intent(
-                    Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                    Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                )
                 requestExactAlarmPermissionLauncher.launch(intent)
             }
         } else {
-            scheduleAlarm()
+            lifecycleScope.launch { scheduleAlarm() }
         }
     }
 
