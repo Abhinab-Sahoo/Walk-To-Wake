@@ -30,4 +30,10 @@ class AlarmingViewModel @Inject constructor(
             }
         }
     }
+
+    fun update(alarm: Alarm) {
+        viewModelScope.launch {
+            alarmRepository.updateAlarm(alarm)
+        }
+    }
 }

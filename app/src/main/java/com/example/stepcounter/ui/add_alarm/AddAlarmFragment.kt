@@ -1,9 +1,11 @@
 package com.example.stepcounter.ui.add_alarm
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.icu.util.Calendar
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -49,6 +52,16 @@ class AddAlarmFragment : Fragment() {
             }
         }
 
+    private val requestStepCounterPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                saveAlarmWithPermissionCheck()
+            } else {
+                Toast.makeText(requireContext(), "Step counting permission is denied.", Toast.LENGTH_SHORT).show()
+                saveAlarmWithPermissionCheck()
+            }
+        }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -63,9 +76,18 @@ class AddAlarmFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.saveAlarmButton.setOnClickListener {
-            saveAlarmWithPermissionCheck()
+            onSaveClicked()
         }
 
+    }
+
+    private fun onSaveClicked() {
+        val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
+        if (steps > 0) {
+            checkAndRequestStepCounterPermission()
+        } else {
+            saveAlarmWithPermissionCheck()
+        }
     }
 
     private suspend fun scheduleAlarm() {
@@ -142,6 +164,29 @@ class AddAlarmFragment : Fragment() {
             }
         } else {
             lifecycleScope.launch { scheduleAlarm() }
+        }
+    }
+
+    private fun checkAndRequestStepCounterPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACTIVITY_RECOGNITION
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    saveAlarmWithPermissionCheck()
+                }
+                shouldShowRequestPermissionRationale(Manifest.permission.ACTIVITY_RECOGNITION) -> {
+                    // For now, we'll request it directly.
+                    // Professionally ask second time if allowed then request
+                    requestStepCounterPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+                }
+                else -> {
+                    requestStepCounterPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+                }
+            }
+        } else {
+            saveAlarmWithPermissionCheck()
         }
     }
 
