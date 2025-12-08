@@ -26,10 +26,11 @@ data class Alarm(
             return time.format(formatter)
         }
 
-    val isScheduledForToday: Boolean
+    val formattedHourMinute: String
         get() {
-            val today = LocalDate.now().dayOfWeek
-            return daysOfWeek.isEmpty() || daysOfWeek.contains(today)
+            val time = LocalTime.of(hour, minute)
+            val formatter = DateTimeFormatter.ofPattern("hh:mm")
+            return time.format(formatter)
         }
 
     val formattedDays: String

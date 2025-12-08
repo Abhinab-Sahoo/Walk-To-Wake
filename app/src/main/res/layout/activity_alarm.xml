@@ -6,16 +6,111 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
     tools:context=".ui.alarming.AlarmActivity">
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/digitalClock"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Alarm is Ringing..."
-        android:textSize="34sp"
+        android:format12Hour="hh:mm"
+        android:format24Hour="HH:mm"
+        android:textSize="112sp"
+        android:textStyle="normal"
+        android:textColor="#E5E5E5"
+        android:fontFamily="sans-serif-medium"
+        app:layout_constraintBottom_toTopOf="@id/alarmLabelTextView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="10:48" />
+
+    <TextView
+        android:id="@+id/alarmLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceHeadline6"
+        android:textSize="24sp"
+        android:textColor="#E5E5E5"
+        android:fontFamily="sans-serif"
+        android:layout_marginBottom="64dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/guideline_center"
+        tools:text="Good Morning!" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.5" />
+
+
+<!--    <TextView-->
+<!--        android:id="@+id/stepsTextView"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginTop="12dp"-->
+<!--        android:textAppearance="?attr/textAppearanceBody1"-->
+<!--        android:textSize="24sp"-->
+<!--        android:textColor="#B3B3B3"-->
+<!--        android:fontFamily="sans-serif"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/alarmLabelTextView"-->
+<!--        tools:text="Walk 200 steps to dismiss" />-->
+
+    <TextView
+        android:id="@+id/currentStepsTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:textSize="96sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/guideline_center"
+        tools:text="15" />
+
+    <ProgressBar
+        android:id="@+id/stepsProgressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="16dp"
+        android:layout_marginHorizontal="64dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/currentStepsTextView"
+        tools:progress="50" />
+
+    <TextView
+        android:id="@+id/targetStepsTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textAppearance="?attr/textAppearanceBody1"
+        app:layout_constraintEnd_toEndOf="@id/stepsProgressBar"
+        app:layout_constraintStart_toStartOf="@id/stepsProgressBar"
+        app:layout_constraintTop_toBottomOf="@id/stepsProgressBar"
+        tools:text="/ 200 Steps" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/dismissButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:minHeight="56dp"
+        android:paddingHorizontal="36dp"
+        android:paddingVertical="24dp"
+        android:text="@string/dismiss"
+        android:textColor="#F5F5F5"
+        android:textSize="18sp"
+        app:backgroundTint="#3D435A"
+        app:cornerRadius="36dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/targetStepsTextView" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

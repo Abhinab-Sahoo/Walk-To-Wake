@@ -3,19 +3,19 @@ package com.example.stepcounter.ui.alarming
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.example.stepcounter.R
+import androidx.lifecycle.lifecycleScope
 import com.example.stepcounter.databinding.ActivityAlarmBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 
 @AndroidEntryPoint
 class AlarmActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAlarmBinding
+    private val alarmingViewModel: AlarmingViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,19 +33,25 @@ class AlarmActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         binding = ActivityAlarmBinding.inflate(layoutInflater)
-        enableEdgeToEdge()
         setContentView(binding.root)
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
         val alarmId = intent.getIntExtra("ALARM_ID", -1)
         if (alarmId == -1) {
             finish()
             return
+        }
+
+        lifecycleScope.launch {
+            alarmingViewModel.alarm.collect { alarm ->
+                if (alarm != null) {
+                    binding.digitalClock.text = alarm.formattedHourMinute
+                    binding.alarmLabelTextView.text = alarm.label
+                    binding.stepsProgressBar.max = alarm.steps
+                    binding.targetStepsTextView.text = "/ ${alarm.steps} Steps"
+                    binding.currentStepsTextView.text = "0"
+                    binding.stepsProgressBar.progress = 0
+                }
+            }
         }
 
     }
