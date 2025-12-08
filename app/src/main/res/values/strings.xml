@@ -16,4 +16,6 @@
     <string name="saturday_short">S</string>
     <string name="sunday_short">S</string>
     <string name="floating_add_button">Floating Add Button</string>
+    <string name="label">Label</string>
+    <string name="dismiss">DISMISS</string>
 </resources>
