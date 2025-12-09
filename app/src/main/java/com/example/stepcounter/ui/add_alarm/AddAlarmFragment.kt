@@ -2,11 +2,9 @@ package com.example.stepcounter.ui.add_alarm
 
 import android.Manifest
 import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.icu.util.Calendar
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -18,11 +16,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
-import com.example.stepcounter.receiver.AlarmReceiver
 import com.example.stepcounter.ui.alarm.AlarmViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -41,7 +39,7 @@ class AddAlarmFragment : Fragment() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (alarmManager.canScheduleExactAlarms()) {
-                    lifecycleScope.launch { scheduleAlarm() }
+                    scheduleAlarm()
                 } else {
                     Toast.makeText(
                         requireContext(),
@@ -57,7 +55,11 @@ class AddAlarmFragment : Fragment() {
             if (isGranted) {
                 saveAlarmWithPermissionCheck()
             } else {
-                Toast.makeText(requireContext(), "Step counting permission is denied.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Step counting permission is denied.",
+                    Toast.LENGTH_SHORT
+                ).show()
                 saveAlarmWithPermissionCheck()
             }
         }
@@ -79,6 +81,27 @@ class AddAlarmFragment : Fragment() {
             onSaveClicked()
         }
 
+        collectUiEvents()
+
+    }
+
+    private fun collectUiEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                alarmViewModel.alarmScheduledEvent.collect { event ->
+                    when (event) {
+                        is AddAlarmUiEvent.ShowToast -> {
+                            Toast.makeText(
+                                requireContext(),
+                                event.message,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            findNavController().navigateUp()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun onSaveClicked() {
@@ -90,72 +113,42 @@ class AddAlarmFragment : Fragment() {
         }
     }
 
-    private suspend fun scheduleAlarm() {
+    private fun scheduleAlarm() {
 
         val hour = binding.timePicker.hour
         val minute = binding.timePicker.minute
         val label = binding.labelEditText.text.toString().ifEmpty { "Alarm" }
         val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
-        val selectedDays = mutableSetOf<DayOfWeek>()
-        if (binding.mondayChip.isChecked) selectedDays.add(DayOfWeek.MONDAY)
-        if (binding.tuesdayChip.isChecked) selectedDays.add(DayOfWeek.TUESDAY)
-        if (binding.wednesdayChip.isChecked) selectedDays.add(DayOfWeek.WEDNESDAY)
-        if (binding.thursdayChip.isChecked) selectedDays.add(DayOfWeek.THURSDAY)
-        if (binding.fridayChip.isChecked) selectedDays.add(DayOfWeek.FRIDAY)
-        if (binding.saturdayChip.isChecked) selectedDays.add(DayOfWeek.SATURDAY)
-        if (binding.sundayChip.isChecked) selectedDays.add(DayOfWeek.SUNDAY)
+        val selectedDays = getSelectedDays()
 
-
-        val newAlarm = Alarm(
+        alarmViewModel.schedule(
             hour = hour,
             minute = minute,
             daysOfWeek = selectedDays,
-            isEnabled = true,
             label = label,
             steps = steps
         )
 
-        val alarmId = alarmViewModel.insert(newAlarm).toInt()
+    }
 
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        if (selectedDays.isEmpty() &&
-            calendar.timeInMillis <= System.currentTimeMillis()
-        ) {
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-        }
-
-        val alarmIntent = Intent(requireContext(), AlarmReceiver::class.java).apply {
-            putExtra("ALARM_ID", alarmId)
-        }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            requireContext(),
-            alarmId,
-            alarmIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    private fun getSelectedDays(): Set<DayOfWeek> {
+        val chipToDayMap = mapOf(
+            binding.mondayChip to DayOfWeek.MONDAY,
+            binding.tuesdayChip to DayOfWeek.TUESDAY,
+            binding.wednesdayChip to DayOfWeek.WEDNESDAY,
+            binding.thursdayChip to DayOfWeek.THURSDAY,
+            binding.fridayChip to DayOfWeek.FRIDAY,
+            binding.saturdayChip to DayOfWeek.SATURDAY,
+            binding.sundayChip to DayOfWeek.SUNDAY
         )
 
-        alarmManager.setExact(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent
-        )
-
-        Toast.makeText(requireContext(), "Alarm set!", Toast.LENGTH_SHORT).show()
-        findNavController().popBackStack()
-
-    } // End of scheduleAlarm()
+        return chipToDayMap.filter { (chip, _) -> chip.isChecked }.values.toSet()
+    }
 
     private fun saveAlarmWithPermissionCheck() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (alarmManager.canScheduleExactAlarms()) {
-                lifecycleScope.launch { scheduleAlarm() }
+                scheduleAlarm()
             } else {
                 val intent = Intent(
                     Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
@@ -163,7 +156,7 @@ class AddAlarmFragment : Fragment() {
                 requestExactAlarmPermissionLauncher.launch(intent)
             }
         } else {
-            lifecycleScope.launch { scheduleAlarm() }
+            scheduleAlarm()
         }
     }
 
@@ -176,11 +169,13 @@ class AddAlarmFragment : Fragment() {
                 ) == PackageManager.PERMISSION_GRANTED -> {
                     saveAlarmWithPermissionCheck()
                 }
+
                 shouldShowRequestPermissionRationale(Manifest.permission.ACTIVITY_RECOGNITION) -> {
                     // For now, we'll request it directly.
                     // Professionally ask second time if allowed then request
                     requestStepCounterPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
                 }
+
                 else -> {
                     requestStepCounterPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
                 }
@@ -189,7 +184,6 @@ class AddAlarmFragment : Fragment() {
             saveAlarmWithPermissionCheck()
         }
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()
