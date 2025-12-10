@@ -2,8 +2,6 @@
     <string name="app_name">Step Counter</string>
     <string name="sensor_not_available">Step counter sensor not available!</string>
     <string name="steps">Steps: %1$d</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="create_alarm">Create Alarm</string>
     <string name="repeat_on">Repeat on</string>
     <string name="steps_to_dismiss">Steps to dismiss</string>
