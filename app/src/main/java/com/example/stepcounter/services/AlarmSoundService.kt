@@ -17,8 +17,6 @@ class AlarmSoundService : Service() {
         return null
     }
 
-    // TODO: Still it doesn't work. clearing app from recent
-    //  doesn't let the alarm to ring on scheduled time.
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val notification: Notification? =
