@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.stepcounter.R
+import com.example.stepcounter.services.AlarmSoundService
 import com.example.stepcounter.ui.alarming.AlarmActivity
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -27,7 +28,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         val fullScreenIntent = Intent(context, AlarmActivity::class.java).apply {
             putExtra("ALARM_ID", alarmId)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
         val fullScreenPendingIntent = PendingIntent.getActivity(
@@ -40,7 +41,14 @@ class AlarmReceiver : BroadcastReceiver() {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val notificationBuilder =
+        val channel = NotificationChannel(
+            "alarm_channel",
+            "Alarms",
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        notificationManager.createNotificationChannel(channel)
+
+        val notification =
             NotificationCompat.Builder(context, "alarm_channel")
                 .setSmallIcon(R.drawable.ic_alarm)
                 .setContentTitle("Alarm Ringing")
@@ -48,16 +56,18 @@ class AlarmReceiver : BroadcastReceiver() {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setFullScreenIntent(fullScreenPendingIntent, true)
+                .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "alarm_channel",
-                "Alarms",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            notificationManager.createNotificationChannel(channel)
+        val serviceIntent = Intent(context, AlarmSoundService::class.java).apply {
+            putExtra("ALARM_ID", alarmId)
+            putExtra("NOTIFICATION", notification)
         }
 
-        notificationManager.notify(alarmId, notificationBuilder.build())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent)
+        } else {
+            context.startService(serviceIntent)
+        }
+
     }
 }

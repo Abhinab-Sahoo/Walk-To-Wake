@@ -2,11 +2,9 @@ package com.example.stepcounter.ui.add_alarm
 
 import android.Manifest
 import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.icu.util.Calendar
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -18,11 +16,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
-import com.example.stepcounter.receiver.AlarmReceiver
 import com.example.stepcounter.ui.alarm.AlarmViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -37,36 +35,54 @@ class AddAlarmFragment : Fragment() {
     private lateinit var alarmManager: AlarmManager
     private val alarmViewModel: AlarmViewModel by viewModels()
 
-    private val requestExactAlarmPermissionLauncher =
+    // Handles the result from the special "schedule exact alarms" permission screen.
+    private val exactAlarmPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    lifecycleScope.launch { scheduleAlarm() }
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Permission denied. Cannot set exact alarm.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                && alarmManager.canScheduleExactAlarms()
+            ) {
+                scheduleAlarm()
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "Permission denied. Cannot set exact alarm.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
-    private val requestStepCounterPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
-                saveAlarmWithPermissionCheck()
-            } else {
-                Toast.makeText(requireContext(), "Step counting permission is denied.", Toast.LENGTH_SHORT).show()
-                saveAlarmWithPermissionCheck()
+    // Handles the result of the step counter (Activity Recognition) permission request.
+    private val stepCounterPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted: Boolean ->
+            if (!granted) {
+                Toast.makeText(
+                    requireContext(),
+                    "Step permission denied. Steps may not work.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+            // After handling this, proceed to the next permission check.
+            ensureNotificationPermission()
+        }
+
+    // Handles the result of the notification permission request (Android 13+).
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted: Boolean ->
+            if (!granted) {
+                Toast.makeText(
+                    requireContext(),
+                    "Notification permission denied. Alarm may not show.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            // After handling this, proceed to the final permission check.
+            ensureExactAlarmPermission()
         }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Inflate the layout for this fragment
         _binding = FragmentAddAlarmBinding.inflate(inflater, container, false)
         alarmManager = requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager
         return binding.root
@@ -79,118 +95,151 @@ class AddAlarmFragment : Fragment() {
             onSaveClicked()
         }
 
+        observeUiEvents()
+
     }
 
-    private fun onSaveClicked() {
-        val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
-        if (steps > 0) {
-            checkAndRequestStepCounterPermission()
-        } else {
-            saveAlarmWithPermissionCheck()
+    /**
+     * Subscribes to one-time events from the ViewModel, like showing a toast.
+     */
+    private fun observeUiEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                alarmViewModel.alarmScheduledEvent.collect { event ->
+                    if (event is AddAlarmUiEvent.ShowToast) {
+                        Toast.makeText(requireContext(), event.message, Toast.LENGTH_SHORT).show()
+                        findNavController().navigateUp()
+                    }
+                }
+            }
         }
     }
 
-    private suspend fun scheduleAlarm() {
+    /**
+     * Entry point when the user clicks the save button. Starts the chain of permission checks.
+     */
+    private fun onSaveClicked() {
+        val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
+        if (steps > 0) {
+            // If steps are required, start with the step counter permission.
+            ensureStepCounterPermission()
+        } else {
+            // Otherwise, skip to the notification permission.
+            ensureNotificationPermission()
+        }
+    }
 
+    /**
+     * Checks for and requests the Step Counter (Activity Recognition) permission if needed.
+     */
+    private fun ensureStepCounterPermission() {
+        // This permission is only required on Android Q (10) and above.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            ensureNotificationPermission()
+            return
+        }
+
+        val perm = Manifest.permission.ACTIVITY_RECOGNITION
+        when {
+            ContextCompat.checkSelfPermission(requireContext(), perm)
+                    == PackageManager.PERMISSION_GRANTED -> {
+                ensureNotificationPermission()
+            }
+
+            // TODO: Show a custom dialog, explaining why we need this permission.
+            shouldShowRequestPermissionRationale(perm) -> {
+                stepCounterPermissionLauncher.launch(perm)
+            }
+
+            else -> {
+                // Request the permission.
+                stepCounterPermissionLauncher.launch(perm)
+            }
+        }
+    }
+
+    /**
+     * Checks for and requests the Notification permission if needed.
+     */
+    private fun ensureNotificationPermission() {
+        // This permission is only required on Android Tiramisu (13) and above.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            ensureExactAlarmPermission()
+            return
+        }
+
+        val perm = Manifest.permission.POST_NOTIFICATIONS
+        if (ContextCompat.checkSelfPermission(requireContext(), perm)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            ensureExactAlarmPermission()
+        } else {
+            // Request the permission.
+            notificationPermissionLauncher.launch(perm)
+        }
+    }
+
+    /**
+     * Checks if the app can schedule exact alarms and requests permission if needed.
+     */
+    private fun ensureExactAlarmPermission() {
+        // This permission is only required on Android S (12) and above.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            scheduleAlarm()
+            return
+        }
+
+        if (alarmManager.canScheduleExactAlarms()) {
+            scheduleAlarm()
+        } else {
+            // This is a special permission that takes the user to a system screen.
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            exactAlarmPermissionLauncher.launch(intent)
+        }
+    }
+
+    /**
+     * Gathers all user input from the UI and tells the ViewModel to schedule the alarm.
+     * This is the final step after all permissions are granted.
+     */
+    private fun scheduleAlarm() {
         val hour = binding.timePicker.hour
         val minute = binding.timePicker.minute
         val label = binding.labelEditText.text.toString().ifEmpty { "Alarm" }
         val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
-        val selectedDays = mutableSetOf<DayOfWeek>()
-        if (binding.mondayChip.isChecked) selectedDays.add(DayOfWeek.MONDAY)
-        if (binding.tuesdayChip.isChecked) selectedDays.add(DayOfWeek.TUESDAY)
-        if (binding.wednesdayChip.isChecked) selectedDays.add(DayOfWeek.WEDNESDAY)
-        if (binding.thursdayChip.isChecked) selectedDays.add(DayOfWeek.THURSDAY)
-        if (binding.fridayChip.isChecked) selectedDays.add(DayOfWeek.FRIDAY)
-        if (binding.saturdayChip.isChecked) selectedDays.add(DayOfWeek.SATURDAY)
-        if (binding.sundayChip.isChecked) selectedDays.add(DayOfWeek.SUNDAY)
+        val selectedDays = getSelectedDays()
 
-
-        val newAlarm = Alarm(
+        alarmViewModel.schedule(
             hour = hour,
             minute = minute,
             daysOfWeek = selectedDays,
-            isEnabled = true,
             label = label,
             steps = steps
         )
-
-        val alarmId = alarmViewModel.insert(newAlarm).toInt()
-
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        if (selectedDays.isEmpty() &&
-            calendar.timeInMillis <= System.currentTimeMillis()
-        ) {
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-        }
-
-        val alarmIntent = Intent(requireContext(), AlarmReceiver::class.java).apply {
-            putExtra("ALARM_ID", alarmId)
-        }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            requireContext(),
-            alarmId,
-            alarmIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        alarmManager.setExact(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent
-        )
-
-        Toast.makeText(requireContext(), "Alarm set!", Toast.LENGTH_SHORT).show()
-        findNavController().popBackStack()
-
-    } // End of scheduleAlarm()
-
-    private fun saveAlarmWithPermissionCheck() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (alarmManager.canScheduleExactAlarms()) {
-                lifecycleScope.launch { scheduleAlarm() }
-            } else {
-                val intent = Intent(
-                    Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                )
-                requestExactAlarmPermissionLauncher.launch(intent)
-            }
-        } else {
-            lifecycleScope.launch { scheduleAlarm() }
-        }
     }
 
-    private fun checkAndRequestStepCounterPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            when {
-                ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.ACTIVITY_RECOGNITION
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    saveAlarmWithPermissionCheck()
-                }
-                shouldShowRequestPermissionRationale(Manifest.permission.ACTIVITY_RECOGNITION) -> {
-                    // For now, we'll request it directly.
-                    // Professionally ask second time if allowed then request
-                    requestStepCounterPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-                }
-                else -> {
-                    requestStepCounterPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-                }
-            }
-        } else {
-            saveAlarmWithPermissionCheck()
-        }
+    /**
+     * Helper function to determine which days of the week have been selected via the chips.
+     * @return A Set of DayOfWeek enums representing the checked days.
+     */
+    private fun getSelectedDays(): Set<DayOfWeek> {
+        val chipToDayMap = mapOf(
+            binding.mondayChip to DayOfWeek.MONDAY,
+            binding.tuesdayChip to DayOfWeek.TUESDAY,
+            binding.wednesdayChip to DayOfWeek.WEDNESDAY,
+            binding.thursdayChip to DayOfWeek.THURSDAY,
+            binding.fridayChip to DayOfWeek.FRIDAY,
+            binding.saturdayChip to DayOfWeek.SATURDAY,
+            binding.sundayChip to DayOfWeek.SUNDAY
+        )
+
+        // Filters the map for checked chips and returns the corresponding DayOfWeek values.
+        return chipToDayMap.filter { (chip, _) -> chip.isChecked }.values.toSet()
     }
 
-
+    /**
+     * Cleans up the binding reference when the view is destroyed to prevent memory leaks.
+     */
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

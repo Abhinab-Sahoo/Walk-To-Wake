@@ -1,6 +1,8 @@
 package com.example.stepcounter.ui.alarming
 
+import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -15,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.stepcounter.R
 import com.example.stepcounter.databinding.ActivityAlarmBinding
+import com.example.stepcounter.services.AlarmSoundService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -67,14 +70,23 @@ class AlarmActivity : AppCompatActivity(), SensorEventListener {
 
     private fun onDismissClicked() {
         binding.dismissButton.setOnClickListener {
+
+            stopService(Intent(this, AlarmSoundService::class.java))
+
             sensorManager.unregisterListener(this)
 
             val alarm = alarmingViewModel.alarm.value
             if (alarm != null && alarm.daysOfWeek.isEmpty()) {
-
-                val updatedAlarm = alarm.copy(isEnabled = false)
-                alarmingViewModel.update(updatedAlarm)
+                alarmingViewModel.update(alarm.copy(isEnabled = false))
             }
+
+            val alarmId = intent.getIntExtra("ALARM_ID", -1)
+            if (alarmId != -1) {
+                val notificationManager =
+                    getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(alarmId)
+            }
+
             finish()
         }
     }
@@ -156,6 +168,6 @@ class AlarmActivity : AppCompatActivity(), SensorEventListener {
             }
         }
     }
-
-
+    // TODO: on production alarm apps when user dismisses alarm with device locked, it stays on lock screen.
+    // TODO: But on our case after dismissing we were being taken to the alarm screen which is (AlarmFragment).
 }
