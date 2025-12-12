@@ -26,6 +26,8 @@ class AlarmViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    private val alarmManager = context.getSystemService(AlarmManager::class.java)
+
     private val _alarmScheduledEvent = MutableSharedFlow<AddAlarmUiEvent>()
     val alarmScheduledEvent = _alarmScheduledEvent.asSharedFlow()
 
@@ -37,7 +39,6 @@ class AlarmViewModel @Inject constructor(
         label: String, steps: Int
     ) {
         viewModelScope.launch {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
             val newAlarm = Alarm(
                 hour = hour,
@@ -90,4 +91,56 @@ class AlarmViewModel @Inject constructor(
             alarmRepository.updateAlarm(alarm)
         }
     }
+
+    fun toggleAlarm(alarm: Alarm, isEnabled: Boolean) {
+
+        viewModelScope.launch {
+
+            val updatedAlarm = alarm.copy(isEnabled = isEnabled)
+            alarmRepository.updateAlarm(updatedAlarm)
+
+            if (isEnabled) {
+
+                val calendar = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, alarm.hour)
+                    set(Calendar.MINUTE, alarm.minute)
+                    set(Calendar.SECOND, 0)
+                }
+
+                if (alarm.daysOfWeek.isEmpty() && calendar.timeInMillis <= System.currentTimeMillis()) {
+                    calendar.add(Calendar.DAY_OF_YEAR, 1)
+                }
+                val alarmIntent = Intent(context, AlarmReceiver::class.java).apply {
+                    putExtra("ALARM_ID", alarm.id)
+                }
+
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    alarm.id,
+                    alarmIntent,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.timeInMillis,
+                    pendingIntent
+                )
+            } else {
+
+                val alarmIntent = Intent(context, AlarmReceiver::class.java)
+
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    alarm.id,
+                    alarmIntent,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+                alarmManager.cancel(pendingIntent)
+            }
+
+            val toastMessage = if (isEnabled) "${alarm.label} is ON" else "${alarm.label} is OFF"
+            _alarmScheduledEvent.emit(AddAlarmUiEvent.ShowToast(toastMessage))
+        }
+    }
+
 }

@@ -1,9 +1,5 @@
 package com.example.stepcounter.ui.alarm
 
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.content.Intent
-import android.icu.util.Calendar
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -19,7 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.stepcounter.R
 import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.databinding.FragmentAlarmBinding
-import com.example.stepcounter.receiver.AlarmReceiver
+import com.example.stepcounter.ui.add_alarm.AddAlarmUiEvent
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -30,9 +26,7 @@ class AlarmFragment : Fragment() {
     private var _binding: FragmentAlarmBinding? = null
     private val binding get() = _binding!!
 
-
     private val alarmViewModel: AlarmViewModel by viewModels()
-    private lateinit var alarmManager: AlarmManager
 
     private val alarmAdapter = AlarmAdapter(
         clickListener = { alarm ->
@@ -50,74 +44,33 @@ class AlarmFragment : Fragment() {
     ): View {
         // Inflate the layout for this fragment
         _binding = FragmentAlarmBinding.inflate(layoutInflater, container, false)
-        alarmManager = requireContext().getSystemService(AlarmManager::class.java)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        observeUiEvents()
         observeAlarms()
         setupFab()
         setupRecyclerView()
 
     }
 
-    private fun onAlarmToggled(
-        alarm: Alarm,
-        isChecked: Boolean
-    ) {
-        val updatedAlarm = alarm.copy(isEnabled = isChecked)
-        alarmViewModel.update(updatedAlarm)
-
-        if (isChecked) {
-            scheduleSystemAlarm(updatedAlarm)
-            Toast.makeText(requireContext(), "${alarm.label} is ON", Toast.LENGTH_SHORT).show()
-        } else {
-            cancelSystemAlarm(updatedAlarm)
-            Toast.makeText(requireContext(), "${alarm.label} is OFF", Toast.LENGTH_SHORT).show()
-        }
+    private fun onAlarmToggled(alarm: Alarm, isChecked: Boolean) {
+        alarmViewModel.toggleAlarm(alarm, isChecked)
     }
 
-    private fun scheduleSystemAlarm(alarm: Alarm) {
-
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, alarm.hour)
-            set(Calendar.MINUTE, alarm.minute)
-            set(Calendar.SECOND, 0)
+    private fun observeUiEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                alarmViewModel.alarmScheduledEvent.collect { event ->
+                    if (event is AddAlarmUiEvent.ShowToast) {
+                        Toast.makeText(requireContext(), event.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
-
-        if (alarm.daysOfWeek.isEmpty() && calendar.timeInMillis <= System.currentTimeMillis()) {
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-        }
-        val alarmIntent = Intent(requireContext(), AlarmReceiver::class.java).apply {
-            putExtra("ALARM_ID", alarm.id)
-        }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            requireContext(),
-            alarm.id,
-            alarmIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        alarmManager.setExact(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent
-        )
-    }
-
-    private fun cancelSystemAlarm(alarm: Alarm) {
-
-        val alarmIntent = Intent(requireContext(), AlarmReceiver::class.java)
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            requireContext(),
-            alarm.id,
-            alarmIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        alarmManager.cancel(pendingIntent)
     }
 
     private fun observeAlarms() {

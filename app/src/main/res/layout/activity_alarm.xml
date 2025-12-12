@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:format12Hour="hh:mm"
         android:format24Hour="HH:mm"
-        android:textSize="120sp"
+        android:textSize="140sp"
         android:textStyle="normal"
         android:textColor="#E5E5E5"
         android:fontFamily="sans-serif-medium"
