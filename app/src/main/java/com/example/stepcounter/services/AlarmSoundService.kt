@@ -8,7 +8,10 @@ import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
+import dagger.hilt.android.AndroidEntryPoint
 
+
+@AndroidEntryPoint
 class AlarmSoundService : Service() {
 
     private var mediaPlayer: MediaPlayer? = null
@@ -27,11 +30,16 @@ class AlarmSoundService : Service() {
                 intent?.getParcelableExtra("NOTIFICATION")
             }
 
-        val alarmId = intent?.getIntExtra("ALARM_ID", -1) ?: 1
+        val alarmId = intent?.getIntExtra("ALARM_ID", -1)
 
-        if (notification != null) {
-            startForeground(alarmId, notification)
+// If we have a bad ID or no notification, we can't run. Stop immediately.
+        if (alarmId == null || alarmId == -1 || notification == null) {
+            stopSelf()
+            return START_NOT_STICKY
         }
+
+// If we passed the check, we can safely start.
+        startForeground(alarmId, notification)
 
         startAlarmSound()
         return START_STICKY

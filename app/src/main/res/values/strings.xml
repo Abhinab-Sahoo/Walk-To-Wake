@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Step Counter</string>
+    <string name="app_name">Walk To Wake</string>
     <string name="sensor_not_available">Step counter sensor not available!</string>
     <string name="steps">Steps: %1$d</string>
     <string name="create_alarm">Create Alarm</string>

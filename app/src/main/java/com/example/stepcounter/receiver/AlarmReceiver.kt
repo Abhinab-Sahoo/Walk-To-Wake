@@ -7,24 +7,58 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.stepcounter.R
+import com.example.stepcounter.data.AlarmRepository
 import com.example.stepcounter.services.AlarmSoundService
 import com.example.stepcounter.ui.alarming.AlarmActivity
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class AlarmReceiver : BroadcastReceiver() {
 
+    @Inject
+    lateinit var repository: AlarmRepository
+
     override fun onReceive(context: Context?, intent: Intent?) {
 
-        if (context == null) {
-            return
-        }
+        if (context == null) return
 
         val alarmId = intent?.getIntExtra("ALARM_ID", -1) ?: -1
         if (alarmId == -1) return
+
+        startAlarmServiceAndActivity(context, alarmId)
+
+        val pendingIntent = goAsync()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val alarm = repository.getAlarmById(alarmId)
+
+                if (alarm != null && alarm.daysOfWeek.isNotEmpty()) {
+                    repository.scheduleAlarm(alarm)
+                    Log.d("AlarmReceiver", "Rescheduled alarm ${alarm.id} for next occurrence")
+                } else {
+                    if (alarm != null) {
+                        repository.updateAlarm(alarm.copy(isEnabled = false))
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                pendingIntent.finish()
+            }
+        }
+
+    }
+
+    private fun startAlarmServiceAndActivity(context: Context, alarmId: Int) {
 
         val fullScreenIntent = Intent(context, AlarmActivity::class.java).apply {
             putExtra("ALARM_ID", alarmId)
@@ -68,6 +102,6 @@ class AlarmReceiver : BroadcastReceiver() {
         } else {
             context.startService(serviceIntent)
         }
-
     }
+
 }

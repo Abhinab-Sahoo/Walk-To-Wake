@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Step Counter"
+rootProject.name = "Walk To Wake"
 include(":app")
