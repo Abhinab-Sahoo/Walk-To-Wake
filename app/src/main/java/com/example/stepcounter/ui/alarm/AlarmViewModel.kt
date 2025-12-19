@@ -82,4 +82,10 @@ class AlarmViewModel @Inject constructor(
         }
     }
 
+    fun deleteAlarm(alarm: Alarm) {
+        viewModelScope.launch {
+            alarmRepository.deleteAlarm(alarm)
+        }
+    }
+
 }

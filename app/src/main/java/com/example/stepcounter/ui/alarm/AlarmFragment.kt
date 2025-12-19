@@ -11,7 +11,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.stepcounter.R
 import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.databinding.FragmentAlarmBinding
@@ -49,6 +51,9 @@ class AlarmFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        val itemTouchHelper = ItemTouchHelper(swipeHandler)
+        itemTouchHelper.attachToRecyclerView(binding.recyclerView)
 
         observeUiEvents()
         observeAlarms()
@@ -99,6 +104,28 @@ class AlarmFragment : Fragment() {
         binding.recyclerView.apply {
             adapter = alarmAdapter
             layoutManager = LinearLayoutManager(requireContext())
+        }
+    }
+
+    private val swipeHandler = object :
+        ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+
+        override fun onMove(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder
+        ): Boolean {
+            return false
+        }
+
+        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+            val position = viewHolder.adapterPosition
+            val alarm = alarmAdapter.currentList[position]
+
+            when (direction) {
+                ItemTouchHelper.LEFT -> {
+                    alarmViewModel.deleteAlarm(alarm)
+                }
+            }
         }
     }
 
