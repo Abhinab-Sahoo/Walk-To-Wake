@@ -11,12 +11,18 @@
         android:label="fragment_alarm"
         tools:layout="@layout/fragment_alarm" >
         <action
-            android:id="@+id/action_alarmFragment_to_addAlarmFragment"
+            android:id="@+id/alarmFragment_to_addAlarmFragment"
             app:destination="@id/addAlarmFragment" />
     </fragment>
     <fragment
         android:id="@+id/addAlarmFragment"
         android:name="com.example.stepcounter.ui.add_alarm.AddAlarmFragment"
         android:label="fragment_add_alarm"
-        tools:layout="@layout/fragment_add_alarm" />
+        tools:layout="@layout/fragment_add_alarm" >
+        <argument
+            android:name="alarm"
+            app:argType="com.example.stepcounter.data.Alarm"
+            app:nullable="true"
+            android:defaultValue="@null" />
+    </fragment>
 </navigation>

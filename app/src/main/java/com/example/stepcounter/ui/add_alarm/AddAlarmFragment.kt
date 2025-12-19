@@ -20,6 +20,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
+import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
 import com.example.stepcounter.ui.alarm.AlarmViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -34,6 +36,8 @@ class AddAlarmFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var alarmManager: AlarmManager
     private val alarmViewModel: AlarmViewModel by viewModels()
+
+    private val args: AddAlarmFragmentArgs by navArgs()
 
     // Handles the result from the special "schedule exact alarms" permission screen.
     private val exactAlarmPermissionLauncher =
@@ -91,12 +95,52 @@ class AddAlarmFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        alarmViewModel.initialize(args.alarm)
+        observeAlarmData()
         binding.saveAlarmButton.setOnClickListener {
             onSaveClicked()
         }
 
         observeUiEvents()
 
+    }
+
+    private fun observeAlarmData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                alarmViewModel.alarmToEdit.collect { alarm ->
+                    alarm?.let {
+                        fillUi(it)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun fillUi(alarm: Alarm) {
+        binding.timePicker.hour = alarm.hour
+        binding.timePicker.minute = alarm.minute
+        binding.labelEditText.setText(alarm.label)
+        binding.stepsEditText.setText(alarm.steps.toString())
+        setChipsFromDays(alarm.daysOfWeek)
+
+        binding.saveAlarmButton.text = "Update"
+    }
+
+    private fun setChipsFromDays(days: Set<DayOfWeek>) {
+        val dayToChipMap = mapOf(
+            DayOfWeek.MONDAY to binding.mondayChip,
+            DayOfWeek.TUESDAY to binding.tuesdayChip,
+            DayOfWeek.WEDNESDAY to binding.wednesdayChip,
+            DayOfWeek.THURSDAY to binding.thursdayChip,
+            DayOfWeek.FRIDAY to binding.fridayChip,
+            DayOfWeek.SATURDAY to binding.saturdayChip,
+            DayOfWeek.SUNDAY to binding.sundayChip
+        )
+
+        days.forEach { day ->
+            dayToChipMap[day]?.isChecked = true
+        }
     }
 
     /**

@@ -30,7 +30,7 @@ class AlarmFragment : Fragment() {
 
     private val alarmAdapter = AlarmAdapter(
         clickListener = { alarm ->
-            Toast.makeText(requireContext(), "Clicked on ${alarm.label}", Toast.LENGTH_SHORT).show()
+            onAlarmClicked(alarm)
         },
         switchClickListener = { alarm, isChecked ->
             onAlarmToggled(alarm, isChecked)
@@ -55,6 +55,12 @@ class AlarmFragment : Fragment() {
         setupFab()
         setupRecyclerView()
 
+    }
+
+    private fun onAlarmClicked(alarm: Alarm) {
+        findNavController().navigate(
+            AlarmFragmentDirections.alarmFragmentToAddAlarmFragment(alarm)
+        )
     }
 
     private fun onAlarmToggled(alarm: Alarm, isChecked: Boolean) {
@@ -85,7 +91,7 @@ class AlarmFragment : Fragment() {
 
     private fun setupFab() {
         binding.addAlarmFab.setOnClickListener {
-            findNavController().navigate(R.id.action_alarmFragment_to_addAlarmFragment)
+            findNavController().navigate(R.id.alarmFragment_to_addAlarmFragment)
         }
     }
 

@@ -1,13 +1,17 @@
 package com.example.stepcounter.data
 
+import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.parcelize.Parcelize
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+
+@Parcelize
 @Entity(tableName = "alarms")
 data class Alarm(
     @PrimaryKey(autoGenerate = true)
@@ -18,7 +22,7 @@ data class Alarm(
     val isEnabled: Boolean,
     val label: String,
     val steps: Int = 0
-) {
+) : Parcelable {
     val formattedTime: String
         get() {
             val time = LocalTime.of(hour, minute)

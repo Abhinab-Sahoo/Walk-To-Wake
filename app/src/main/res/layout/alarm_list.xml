@@ -36,6 +36,9 @@
                 app:layout_constraintTop_toTopOf="parent"
                 tools:text="8:30 AM" />
 
+            <!-- TODO: make 2 separate UI for label & formatted days
+             as i don't like | this bar in between. if label is blank
+             it should be blank rather than using a default string.-->
             <!-- Alarm Label and Days -->
             <TextView
                 android:id="@+id/tv_alarm_label_and_days"

@@ -70,16 +70,16 @@ class AlarmActivity : AppCompatActivity(), SensorEventListener {
 
     private fun onDismissClicked() {
         binding.dismissButton.setOnClickListener {
-
+            // Stop Sound
             stopService(Intent(this, AlarmSoundService::class.java))
-
+            // Stop Sensor
             sensorManager.unregisterListener(this)
-
+            // Update DB (Disable alarm if it's one-time)
             val alarm = alarmingViewModel.alarm.value
             if (alarm != null && alarm.daysOfWeek.isEmpty()) {
                 alarmingViewModel.update(alarm.copy(isEnabled = false))
             }
-
+            // Cancel Notification
             val alarmId = intent.getIntExtra("ALARM_ID", -1)
             if (alarmId != -1) {
                 val notificationManager =
