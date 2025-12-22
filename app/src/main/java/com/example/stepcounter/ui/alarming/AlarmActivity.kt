@@ -87,7 +87,11 @@ class AlarmActivity : AppCompatActivity(), SensorEventListener {
                 notificationManager.cancel(alarmId)
             }
 
-            finish()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                finishAndRemoveTask()
+            } else {
+                finish()
+            }
         }
     }
 
@@ -156,7 +160,8 @@ class AlarmActivity : AppCompatActivity(), SensorEventListener {
                         binding.targetStepsTextView.visibility = View.VISIBLE
 
                         binding.stepsProgressBar.max = alarm.steps
-                        binding.targetStepsTextView.text = "/ ${alarm.steps} Steps"
+                        binding.targetStepsTextView.text =
+                            getString(R.string.steps_to_walk, alarm.steps)
                         binding.currentStepsTextView.text = "0"
                         binding.stepsProgressBar.progress = 0
                     } else {
@@ -168,6 +173,5 @@ class AlarmActivity : AppCompatActivity(), SensorEventListener {
             }
         }
     }
-    // TODO: on production alarm apps when user dismisses alarm with device locked, it stays on lock screen.
-    // TODO: But on our case after dismissing we were being taken to the alarm screen which is (AlarmFragment).
+
 }

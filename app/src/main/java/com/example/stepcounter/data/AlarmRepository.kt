@@ -108,6 +108,7 @@ class AlarmRepository @Inject constructor(
     }
 
     suspend fun deleteAlarm(alarm: Alarm) {
+        cancelAlarm(alarm)
         alarmDao.delete(alarm)
     }
 

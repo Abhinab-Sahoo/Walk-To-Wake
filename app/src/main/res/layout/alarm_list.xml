@@ -15,15 +15,28 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="8dp"
         android:layout_marginVertical="4dp"
-        app:cardCornerRadius="12dp"
+        app:cardCornerRadius="16dp"
         app:cardElevation="2dp"
         app:strokeWidth="0dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:background="?attr/selectableItemBackground">
+            android:padding="20dp"
+            >
+
+            <TextView
+                android:id="@+id/tv_alarm_days"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@{alarm.formattedDays}"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
+                android:alpha="@{alarm.isEnabled ? 1.0f : 0.5f}"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="Mon, Tue, Wed"/>
 
             <!-- Time Display -->
             <TextView
@@ -31,27 +44,29 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@{alarm.formattedTime}"
-                android:textSize="36sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
+                android:textSize="42sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@{alarm.isEnabled ? @color/light_purple : @color/dark_grey}"
+                android:alpha="@{alarm.isEnabled ? 1.0f : 0.5f}"
+                app:layout_constraintStart_toStartOf="@id/tv_alarm_days"
+                app:layout_constraintTop_toBottomOf="@id/tv_alarm_days"
                 tools:text="8:30 AM" />
 
-            <!-- TODO: make 2 separate UI for label & formatted days
-             as i don't like | this bar in between. if label is blank
-             it should be blank rather than using a default string.-->
-            <!-- Alarm Label and Days -->
             <TextView
-                android:id="@+id/tv_alarm_label_and_days"
+                android:id="@+id/tv_alarm_label"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text='@{alarm.label + " | " + alarm.formattedDays }'
+                android:layout_marginTop="8dp"
+                android:text='@{alarm.label}'
+                android:textSize="14sp"
                 android:maxLines="1"
                 android:ellipsize="end"
+                android:alpha="@{alarm.isEnabled ? 1.0f : 0.5f}"
+                android:visibility="@{alarm.label.length() > 0 ? View.VISIBLE : View.GONE}"
                 app:layout_constraintEnd_toStartOf="@id/switch_alarm_enabled"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_alarm_time"
-                tools:text="Morning Walk | Mon, Tue, Wed" />
+                tools:text="Morning Run" />
 
             <!-- Steps -->
             <TextView
@@ -60,12 +75,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:drawablePadding="4dp"
+                android:textSize="18sp"
                 android:gravity="center_vertical"
+                android:alpha="@{alarm.isEnabled ? 1.0f : 0.5f}"
                 android:text="@{String.valueOf(alarm.steps)}"
                 android:visibility="@{alarm.steps > 0 ? View.VISIBLE : View.GONE}"
                 app:drawableStartCompat="@drawable/steps"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_alarm_label_and_days"
+                app:layout_constraintTop_toBottomOf="@id/tv_alarm_label"
                 tools:text="200" />
 
 
@@ -76,8 +93,8 @@
                 android:layout_height="wrap_content"
                 android:checked="@{alarm.isEnabled}"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
+                app:layout_constraintTop_toTopOf="@id/tv_alarm_time"
+                app:layout_constraintBottom_toBottomOf="@id/tv_alarm_time" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

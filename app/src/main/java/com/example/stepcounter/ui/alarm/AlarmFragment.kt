@@ -1,9 +1,11 @@
 package com.example.stepcounter.ui.alarm
 
+import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -39,6 +41,7 @@ class AlarmFragment : Fragment() {
         }
     )
 
+    private var arrowAnimator: ObjectAnimator? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -89,9 +92,40 @@ class AlarmFragment : Fragment() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 alarmViewModel.alarms.collect { alarms ->
                     alarmAdapter.submitList(alarms)
+
+                    if (alarms.isEmpty()) {
+                        showEmptyState()
+                    } else {
+                        hideEmptyState()
+                    }
                 }
             }
         }
+    }
+
+    private fun showEmptyState() {
+        binding.emptyStateView.visibility = View.VISIBLE
+        binding.recyclerView.visibility = View.GONE
+
+        // Create animation only if not already running
+        if (arrowAnimator == null) {
+            arrowAnimator = ObjectAnimator.ofFloat(binding.ivArrow, "translationY", 0f, 25f).apply {
+                duration = 1000 // 1 second up, 1 second down
+                repeatMode = ObjectAnimator.REVERSE
+                repeatCount = ObjectAnimator.INFINITE
+                interpolator = AccelerateDecelerateInterpolator() // Makes it smooth
+            }
+            arrowAnimator?.start()
+        }
+    }
+
+    private fun hideEmptyState() {
+        binding.emptyStateView.visibility = View.GONE
+        binding.recyclerView.visibility = View.VISIBLE
+
+        // Stop animation to save battery
+        arrowAnimator?.cancel()
+        arrowAnimator = null
     }
 
     private fun setupFab() {

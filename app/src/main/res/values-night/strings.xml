@@ -15,4 +15,10 @@
     <string name="floating_add_button">Floating Add Button</string>
     <string name="label">Label</string>
     <string name="dismiss">DISMISS</string>
+    <string name="update">Update</string>
+    <string name="steps_to_walk">/ %1$d Steps</string>
+    <string name="cd_sleeping_cat">Sleeping Cat</string>
+    <string name="downward_arrow">Downward Arrow</string>
+    <string name="enjoy_your_sleep_nor_tap_below_to_set_an_alarm">Enjoy your sleep!\nOr tap below to set an alarm.</string>
+    <string name="no_alarms_yet">No Alarms Yet</string>
 </resources>

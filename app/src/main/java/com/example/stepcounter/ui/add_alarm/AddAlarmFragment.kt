@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.example.stepcounter.R
 import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
 import com.example.stepcounter.ui.alarm.AlarmViewModel
@@ -124,7 +125,7 @@ class AddAlarmFragment : Fragment() {
         binding.stepsEditText.setText(alarm.steps.toString())
         setChipsFromDays(alarm.daysOfWeek)
 
-        binding.saveAlarmButton.text = "Update"
+        binding.saveAlarmButton.text = getString(R.string.update)
     }
 
     private fun setChipsFromDays(days: Set<DayOfWeek>) {
@@ -249,7 +250,7 @@ class AddAlarmFragment : Fragment() {
     private fun scheduleAlarm() {
         val hour = binding.timePicker.hour
         val minute = binding.timePicker.minute
-        val label = binding.labelEditText.text.toString().ifEmpty { "Alarm" }
+        val label = binding.labelEditText.text.toString().ifEmpty { "" }
         val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
         val selectedDays = getSelectedDays()
 

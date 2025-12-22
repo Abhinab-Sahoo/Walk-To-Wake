@@ -24,7 +24,11 @@
             android:name=".ui.alarming.AlarmActivity"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:launchMode="singleTop"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
             android:theme="@style/Theme.MaterialComponents.NoActionBar" />
         <activity
             android:name=".MainActivity"
