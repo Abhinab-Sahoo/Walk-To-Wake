@@ -24,6 +24,7 @@ import androidx.navigation.fragment.navArgs
 import com.example.stepcounter.R
 import com.example.stepcounter.data.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
+import com.example.stepcounter.ui.helpers.DaySelector
 import com.example.stepcounter.ui.alarm.AlarmViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -39,6 +40,8 @@ class AddAlarmFragment : Fragment() {
     private val alarmViewModel: AlarmViewModel by viewModels()
 
     private val args: AddAlarmFragmentArgs by navArgs()
+
+    private lateinit var daySelector: DaySelector
 
     // Handles the result from the special "schedule exact alarms" permission screen.
     private val exactAlarmPermissionLauncher =
@@ -97,7 +100,10 @@ class AddAlarmFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         alarmViewModel.initialize(args.alarm)
+
+        setupDaySelector()
         observeAlarmData()
+
         binding.saveAlarmButton.setOnClickListener {
             onSaveClicked()
         }
@@ -122,26 +128,26 @@ class AddAlarmFragment : Fragment() {
         binding.timePicker.hour = alarm.hour
         binding.timePicker.minute = alarm.minute
         binding.labelEditText.setText(alarm.label)
-        binding.stepsEditText.setText(alarm.steps.toString())
-        setChipsFromDays(alarm.daysOfWeek)
+        binding.stepsEditText.setText(
+            if (alarm.steps >= 0) alarm.steps.toString() else ""
+        )
+        daySelector.setSelectedDays(alarm.daysOfWeek)
 
         binding.saveAlarmButton.text = getString(R.string.update)
     }
 
-    private fun setChipsFromDays(days: Set<DayOfWeek>) {
-        val dayToChipMap = mapOf(
-            DayOfWeek.MONDAY to binding.mondayChip,
-            DayOfWeek.TUESDAY to binding.tuesdayChip,
-            DayOfWeek.WEDNESDAY to binding.wednesdayChip,
-            DayOfWeek.THURSDAY to binding.thursdayChip,
-            DayOfWeek.FRIDAY to binding.fridayChip,
-            DayOfWeek.SATURDAY to binding.saturdayChip,
-            DayOfWeek.SUNDAY to binding.sundayChip
+    private fun setupDaySelector() {
+        daySelector = DaySelector(
+            mapOf(
+                DayOfWeek.SUNDAY to binding.btnSun,
+                DayOfWeek.MONDAY to binding.btnMon,
+                DayOfWeek.TUESDAY to binding.btnTue,
+                DayOfWeek.WEDNESDAY to binding.btnWed,
+                DayOfWeek.THURSDAY to binding.btnThu,
+                DayOfWeek.FRIDAY to binding.btnFri,
+                DayOfWeek.SATURDAY to binding.btnSat
+            )
         )
-
-        days.forEach { day ->
-            dayToChipMap[day]?.isChecked = true
-        }
     }
 
     /**
@@ -250,9 +256,9 @@ class AddAlarmFragment : Fragment() {
     private fun scheduleAlarm() {
         val hour = binding.timePicker.hour
         val minute = binding.timePicker.minute
-        val label = binding.labelEditText.text.toString().ifEmpty { "" }
+        val label = binding.labelEditText.text.toString()
         val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
-        val selectedDays = getSelectedDays()
+        val selectedDays = daySelector.getSelectedDays()
 
         alarmViewModel.schedule(
             hour = hour,
@@ -261,25 +267,6 @@ class AddAlarmFragment : Fragment() {
             label = label,
             steps = steps
         )
-    }
-
-    /**
-     * Helper function to determine which days of the week have been selected via the chips.
-     * @return A Set of DayOfWeek enums representing the checked days.
-     */
-    private fun getSelectedDays(): Set<DayOfWeek> {
-        val chipToDayMap = mapOf(
-            binding.mondayChip to DayOfWeek.MONDAY,
-            binding.tuesdayChip to DayOfWeek.TUESDAY,
-            binding.wednesdayChip to DayOfWeek.WEDNESDAY,
-            binding.thursdayChip to DayOfWeek.THURSDAY,
-            binding.fridayChip to DayOfWeek.FRIDAY,
-            binding.saturdayChip to DayOfWeek.SATURDAY,
-            binding.sundayChip to DayOfWeek.SUNDAY
-        )
-
-        // Filters the map for checked chips and returns the corresponding DayOfWeek values.
-        return chipToDayMap.filter { (chip, _) -> chip.isChecked }.values.toSet()
     }
 
     /**
