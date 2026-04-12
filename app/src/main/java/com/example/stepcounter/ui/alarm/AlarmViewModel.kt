@@ -2,8 +2,8 @@ package com.example.stepcounter.ui.alarm
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.stepcounter.data.Alarm
-import com.example.stepcounter.data.AlarmRepository
+import com.example.stepcounter.data.local.Alarm
+import com.example.stepcounter.data.repository.AlarmRepository
 import com.example.stepcounter.ui.add_alarm.AddAlarmUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +22,7 @@ class AlarmViewModel @Inject constructor(
 
     /**
      * As it is a Shared Flow and used for emitting toast message for fragment
-     * i am reusing it for edit alarm as well.
+     * I am reusing it for edit alarm as well.
      */
     private val _alarmScheduledEvent = MutableSharedFlow<AddAlarmUiEvent>()
     val alarmScheduledEvent = _alarmScheduledEvent.asSharedFlow()

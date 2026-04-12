@@ -1,4 +1,4 @@
-package com.example.stepcounter.data
+package com.example.stepcounter.data.repository
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
 import com.example.stepcounter.MainActivity
+import com.example.stepcounter.data.local.Alarm
+import com.example.stepcounter.data.local.AlarmDao
 import com.example.stepcounter.receiver.AlarmReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow

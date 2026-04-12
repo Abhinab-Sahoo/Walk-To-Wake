@@ -1,4 +1,4 @@
-package com.example.stepcounter.ui.helpers
+package com.example.stepcounter.util
 
 import com.google.android.material.button.MaterialButton
 import java.time.DayOfWeek

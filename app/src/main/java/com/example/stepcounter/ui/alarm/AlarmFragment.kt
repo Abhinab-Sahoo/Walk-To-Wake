@@ -17,7 +17,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.stepcounter.R
-import com.example.stepcounter.data.Alarm
+import com.example.stepcounter.data.local.Alarm
 import com.example.stepcounter.databinding.FragmentAlarmBinding
 import com.example.stepcounter.ui.add_alarm.AddAlarmUiEvent
 import dagger.hilt.android.AndroidEntryPoint

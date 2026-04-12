@@ -22,9 +22,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.stepcounter.R
-import com.example.stepcounter.data.Alarm
+import com.example.stepcounter.data.local.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
-import com.example.stepcounter.ui.helpers.DaySelector
+import com.example.stepcounter.util.DaySelector
 import com.example.stepcounter.ui.alarm.AlarmViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
