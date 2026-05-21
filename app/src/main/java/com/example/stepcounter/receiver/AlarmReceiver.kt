@@ -28,6 +28,20 @@ class AlarmReceiver : BroadcastReceiver() {
 
         AlarmLauncher(context).launchAlarm(alarmId)
 
+        /*
+        goAsync() is a method of the BroadcastReceiver class used to perform asynchronous
+        work within the onReceive() method. By default a BroadcastReceiver is considered
+        finished as soon as onReceive() returns, allowing the system to potentially kill
+        the process. Calling goAsync() signals the system that the receiver is still active
+        even after returning from the main function, giving you a small window (typically 10sec)
+        to complete background task.
+        You must call finish() on the PendingResult object once your background work is done
+        to signal the system that it can reclaim the process now.
+
+        If you suspect your database or repository operation could exceed 10 seconds,
+        do not use goAsync(). Hand it over to WorkManager.
+         */
+
         val pendingIntent = goAsync()
 
         CoroutineScope(Dispatchers.IO).launch {

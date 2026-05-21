@@ -45,19 +45,24 @@ class AlarmSoundService : Service(), SensorEventListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
+        // Case 1: Service is restarting after force stop (START_STICKY restarts)
+        // Android delivers null intent in this case
         if (intent == null) {
             handleServiceRestart()
             return START_STICKY
         }
 
+        // Case 2: Normal start - extract data from intent
         val alarmId = extractAlarmId(intent)
         val notification = extractNotification(intent)
 
+        // Case 3: Bad data - can't run, stop cleanly
         if (alarmId == -1 || notification == null) {
             stopSelf()
             return START_NOT_STICKY
         }
 
+        // Case 4: Everything valid - save ID and start normally
         currentAlarmId = alarmId
         startForeground(alarmId, notification)
         startAlarmSound()
@@ -103,16 +108,22 @@ class AlarmSoundService : Service(), SensorEventListener {
         }
     }
 
+    // When restarted by Android after force stop
+    // check if user still haven't walked enough - if so, retrigger.
     private fun handleServiceRestart() {
         if (currentAlarmId != -1 && !StepCounterState.isTargetReached) {
             AlarmLauncher(this).launchAlarm(currentAlarmId)
         }
     }
 
+    // Extract alarmId form intent safely
+    // Returns -1 if missing or invalid.
     private fun extractAlarmId(intent: Intent): Int {
         return intent.getIntExtra("ALARM_ID", -1)
     }
 
+    // Pulls the pre-built notification form intent.
+    // Handles API version difference for getParcelableExtra.
     private fun extractNotification(intent: Intent): Notification? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra("NOTIFICATION", Notification::class.java)
@@ -122,6 +133,8 @@ class AlarmSoundService : Service(), SensorEventListener {
         }
     }
 
+    // Fetches alarm from DB, resets step state,
+    // then registers the step sensor on the main thread.
     private fun initializeSensorAndSteps(alarmId: Int) {
         serviceScope.launch {
             val alarm = alarmRepository.getAlarmById(alarmId)
@@ -132,7 +145,6 @@ class AlarmSoundService : Service(), SensorEventListener {
             withContext(Dispatchers.Main) {
                 sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
                 stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-
                 if (stepSensor != null) {
                     sensorManager.registerListener(
                         this@AlarmSoundService,

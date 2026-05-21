@@ -36,6 +36,13 @@ class AlarmRepository @Inject constructor(
         }
     }
 
+    /*
+    scheduleAlarm should be private, anything can call it directly from outside
+    scheduling should only happen through insertAlarm & updateAlarm.
+    Exposing it breaks encapsulation.
+    But if I make it private BootReceiver.kt & AlarmReceiver.kt cannot access it
+    How to fix this issue ?
+     */
     fun scheduleAlarm(alarm: Alarm) {
         val triggerTime = findNextAlarmTime(alarm.hour, alarm.minute, alarm.daysOfWeek)
 

@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -13,7 +12,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -25,7 +23,7 @@ import com.example.stepcounter.R
 import com.example.stepcounter.data.local.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
 import com.example.stepcounter.util.DaySelector
-import com.example.stepcounter.ui.alarm.AlarmViewModel
+import com.example.stepcounter.util.PermissionHelper
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -37,11 +35,12 @@ class AddAlarmFragment : Fragment() {
     private var _binding: FragmentAddAlarmBinding? = null
     private val binding get() = _binding!!
     private lateinit var alarmManager: AlarmManager
-    private val alarmViewModel: AlarmViewModel by viewModels()
+    private val addAlarmViewModel: AddAlarmViewModel by viewModels()
 
     private val args: AddAlarmFragmentArgs by navArgs()
 
     private lateinit var daySelector: DaySelector
+    private lateinit var permissionHelper: PermissionHelper
 
     // Handles the result from the special "schedule exact alarms" permission screen.
     private val exactAlarmPermissionLauncher =
@@ -70,7 +69,7 @@ class AddAlarmFragment : Fragment() {
                 ).show()
             }
             // After handling this, proceed to the next permission check.
-            ensureNotificationPermission()
+            permissionHelper.ensureNotificationPermission()
         }
 
     // Handles the result of the notification permission request (Android 13+).
@@ -84,7 +83,7 @@ class AddAlarmFragment : Fragment() {
                 ).show()
             }
             // After handling this, proceed to the final permission check.
-            ensureExactAlarmPermission()
+            permissionHelper.ensureExactAlarmPermission()
         }
 
     override fun onCreateView(
@@ -99,7 +98,7 @@ class AddAlarmFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        alarmViewModel.initialize(args.alarm)
+        addAlarmViewModel.initialize(args.alarm)
 
         setupDaySelector()
         observeAlarmData()
@@ -108,6 +107,7 @@ class AddAlarmFragment : Fragment() {
             onSaveClicked()
         }
 
+        initializePermissionHelper()
         observeUiEvents()
 
     }
@@ -115,7 +115,7 @@ class AddAlarmFragment : Fragment() {
     private fun observeAlarmData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                alarmViewModel.alarmToEdit.collect { alarm ->
+                addAlarmViewModel.alarmToEdit.collect { alarm ->
                     alarm?.let {
                         fillUi(it)
                     }
@@ -156,7 +156,7 @@ class AddAlarmFragment : Fragment() {
     private fun observeUiEvents() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                alarmViewModel.alarmScheduledEvent.collect { event ->
+                addAlarmViewModel.alarmScheduledEvent.collect { event ->
                     if (event is AddAlarmUiEvent.ShowToast) {
                         Toast.makeText(requireContext(), event.message, Toast.LENGTH_SHORT).show()
                         findNavController().navigateUp()
@@ -171,82 +171,37 @@ class AddAlarmFragment : Fragment() {
      */
     private fun onSaveClicked() {
         val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
-        if (steps > 0) {
-            // If steps are required, start with the step counter permission.
-            ensureStepCounterPermission()
-        } else {
-            // Otherwise, skip to the notification permission.
-            ensureNotificationPermission()
-        }
+        permissionHelper.startPermissionChain(steps > 0)
     }
 
-    /**
-     * Checks for and requests the Step Counter (Activity Recognition) permission if needed.
-     */
-    private fun ensureStepCounterPermission() {
-        // This permission is only required on Android Q (10) and above.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            ensureNotificationPermission()
-            return
-        }
+    fun initializePermissionHelper() {
 
-        val perm = Manifest.permission.ACTIVITY_RECOGNITION
-        when {
-            ContextCompat.checkSelfPermission(requireContext(), perm)
-                    == PackageManager.PERMISSION_GRANTED -> {
-                ensureNotificationPermission()
+        permissionHelper = PermissionHelper(
+            fragment = this,
+            onAllPermissionReady = { scheduleAlarm() },
+            onStepPermissionNeeded = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    stepCounterPermissionLauncher.launch(
+                        Manifest.permission.ACTIVITY_RECOGNITION
+                    )
+                }
+            },
+            onNotificationPermissionNeeded = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    notificationPermissionLauncher.launch(
+                        Manifest.permission.POST_NOTIFICATIONS
+                    )
+                }
+            },
+            onExactAlarmPermissionNeeded = {
+                val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                } else {
+                    TODO("VERSION.SDK_INT < S")
+                }
+                exactAlarmPermissionLauncher.launch(intent)
             }
-
-            // TODO: Show a custom dialog, explaining why we need this permission.
-            shouldShowRequestPermissionRationale(perm) -> {
-                stepCounterPermissionLauncher.launch(perm)
-            }
-
-            else -> {
-                // Request the permission.
-                stepCounterPermissionLauncher.launch(perm)
-            }
-        }
-    }
-
-    /**
-     * Checks for and requests the Notification permission if needed.
-     */
-    private fun ensureNotificationPermission() {
-        // This permission is only required on Android Tiramisu (13) and above.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            ensureExactAlarmPermission()
-            return
-        }
-
-        val perm = Manifest.permission.POST_NOTIFICATIONS
-        if (ContextCompat.checkSelfPermission(requireContext(), perm)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            ensureExactAlarmPermission()
-        } else {
-            // Request the permission.
-            notificationPermissionLauncher.launch(perm)
-        }
-    }
-
-    /**
-     * Checks if the app can schedule exact alarms and requests permission if needed.
-     */
-    private fun ensureExactAlarmPermission() {
-        // This permission is only required on Android S (12) and above.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            scheduleAlarm()
-            return
-        }
-
-        if (alarmManager.canScheduleExactAlarms()) {
-            scheduleAlarm()
-        } else {
-            // This is a special permission that takes the user to a system screen.
-            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-            exactAlarmPermissionLauncher.launch(intent)
-        }
+        )
     }
 
     /**
@@ -260,7 +215,7 @@ class AddAlarmFragment : Fragment() {
         val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
         val selectedDays = daySelector.getSelectedDays()
 
-        alarmViewModel.schedule(
+        addAlarmViewModel.scheduleAlarm(
             hour = hour,
             minute = minute,
             daysOfWeek = selectedDays,
