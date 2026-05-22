@@ -32,6 +32,8 @@ import java.time.DayOfWeek
 @AndroidEntryPoint
 class AddAlarmFragment : Fragment() {
 
+    // TODO: Handle scenario if user denies notification permission.
+
     private var _binding: FragmentAddAlarmBinding? = null
     private val binding get() = _binding!!
     private lateinit var alarmManager: AlarmManager
@@ -61,29 +63,21 @@ class AddAlarmFragment : Fragment() {
     // Handles the result of the step counter (Activity Recognition) permission request.
     private val stepCounterPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted: Boolean ->
-            if (!granted) {
-                Toast.makeText(
-                    requireContext(),
-                    "Step permission denied. Steps may not work.",
-                    Toast.LENGTH_SHORT
-                ).show()
+            if (granted) {
+                permissionHelper.ensureNotificationPermission()
+            } else {
+                permissionHelper.showStepCounterPermissionRequiredDialog()
             }
-            // After handling this, proceed to the next permission check.
-            permissionHelper.ensureNotificationPermission()
         }
 
     // Handles the result of the notification permission request (Android 13+).
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted: Boolean ->
-            if (!granted) {
-                Toast.makeText(
-                    requireContext(),
-                    "Notification permission denied. Alarm may not show.",
-                    Toast.LENGTH_SHORT
-                ).show()
+            if (granted) {
+                permissionHelper.ensureExactAlarmPermission()
+            } else {
+                permissionHelper.showNotificationPermissionRequiredDialog()
             }
-            // After handling this, proceed to the final permission check.
-            permissionHelper.ensureExactAlarmPermission()
         }
 
     override fun onCreateView(

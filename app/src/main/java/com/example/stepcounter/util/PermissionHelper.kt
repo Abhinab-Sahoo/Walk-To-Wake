@@ -2,9 +2,13 @@ package com.example.stepcounter.util
 
 import android.Manifest
 import android.app.AlarmManager
+import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 
@@ -95,5 +99,44 @@ class PermissionHelper(
         } else {
             onExactAlarmPermissionNeeded()
         }
+    }
+
+    /**
+     * If user denies permission, show them why we need this permission
+     */
+    fun showNotificationPermissionRequiredDialog() {
+        AlertDialog.Builder(fragment.requireContext())
+            .setTitle("Notification Permission Required")
+            .setMessage(
+                "Walk to Wake needs notification permission to show " +
+                        "the alarm screen. Without it, you won't be able to " +
+                        "walk to dismiss the alarm. Please enable it in Settings.")
+            .setPositiveButton("Open Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", fragment.requireContext().packageName, null)
+                }
+                fragment.startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * If user denies permission, show them why we need this permission
+     */
+    fun showStepCounterPermissionRequiredDialog() {
+        AlertDialog.Builder(fragment.requireContext())
+            .setTitle("Step Counter Permission Required")
+            .setMessage("Walk to Wake needs step counter permission to able " +
+                    "to count steps. Without it, you won't be able to " +
+                    "dismiss the alarm. Please enable it in Settings.")
+            .setPositiveButton("Open Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", fragment.requireContext().packageName, null)
+                }
+                fragment.startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }
