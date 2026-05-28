@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.stepcounter.data.local.Alarm
 import com.example.stepcounter.data.repository.AlarmRepository
+import com.example.stepcounter.util.AlarmTimeHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,11 +55,12 @@ class AddAlarmViewModel @Inject constructor(
 
             if (currentAlarmId == 0) {
                 alarmRepository.insertAlarm(newAlarm).toInt()
-                _alarmScheduledEvent.emit(AddAlarmUiEvent.ShowToast("Alarm Scheduled"))
             } else {
                 alarmRepository.updateAlarm(newAlarm)
-                _alarmScheduledEvent.emit(AddAlarmUiEvent.ShowToast("Alarm Updated"))
             }
+
+            val message = AlarmTimeHelper.getTimeUntilAlarm(hour, minute, daysOfWeek)
+            _alarmScheduledEvent.emit(AddAlarmUiEvent.ShowToast(message))
         }
     }
 }

@@ -125,11 +125,26 @@ class AlarmRepository @Inject constructor(
         return alarmDao.getAllAlarms()
     }
 
-    suspend fun getAllAlarmsList(): List<Alarm> {
-        return alarmDao.getAllAlarmsList()
-    }
-
     suspend fun getAlarmById(creationTime: Int): Alarm? {
         return alarmDao.getAlarmById(creationTime)
+    }
+
+    // Called by BootReceiver after reboot.
+    suspend fun rescheduleAllAlarms() {
+        val alarms = alarmDao.getAllAlarmsList()
+        alarms.forEach { alarm ->
+            if (alarm.isEnabled) {
+                scheduleAlarm(alarm)
+            }
+        }
+    }
+
+    // Called by AlarmReceiver to reschedule repeating alarm.
+    suspend fun rescheduleAlarm(alarm: Alarm) {
+        if (alarm.daysOfWeek.isNotEmpty()) {
+            scheduleAlarm(alarm)
+        } else {
+            alarmDao.update(alarm.copy(isEnabled = false))
+        }
     }
 }

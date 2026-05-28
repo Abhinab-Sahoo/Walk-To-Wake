@@ -3,7 +3,6 @@ package com.example.stepcounter.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import com.example.stepcounter.data.repository.AlarmRepository
 import com.example.stepcounter.util.AlarmLauncher
 import dagger.hilt.android.AndroidEntryPoint
@@ -47,14 +46,8 @@ class AlarmReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val alarm = repository.getAlarmById(alarmId)
-
-                if (alarm != null && alarm.daysOfWeek.isNotEmpty()) {
-                    repository.scheduleAlarm(alarm)
-                    Log.d("AlarmReceiver", "Rescheduled alarm ${alarm.id} for next occurrence")
-                } else {
-                    if (alarm != null) {
-                        repository.updateAlarm(alarm.copy(isEnabled = false))
-                    }
+                if (alarm != null) {
+                    repository.rescheduleAlarm(alarm)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

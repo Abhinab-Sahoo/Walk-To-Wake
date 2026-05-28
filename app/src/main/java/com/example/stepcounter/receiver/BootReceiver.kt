@@ -23,14 +23,7 @@ class BootReceiver : BroadcastReceiver() {
             val pendingIntent = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val alarms = repository.getAllAlarmsList()
-
-                    alarms.forEach { alarm ->
-                        if (alarm.isEnabled) {
-                            repository.scheduleAlarm(alarm)
-                        }
-                    }
-
+                    repository.rescheduleAllAlarms()
                 } catch (e: Exception) {
                     e.printStackTrace()
                 } finally {
