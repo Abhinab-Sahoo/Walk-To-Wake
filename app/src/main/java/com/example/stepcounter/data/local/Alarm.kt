@@ -1,4 +1,4 @@
-package com.example.stepcounter.data
+package com.example.stepcounter.data.local
 
 import android.os.Parcelable
 import androidx.room.Entity
@@ -9,7 +9,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-
 
 @Parcelize
 @Entity(tableName = "alarms")

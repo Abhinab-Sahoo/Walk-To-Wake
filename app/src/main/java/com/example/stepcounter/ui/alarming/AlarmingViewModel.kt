@@ -3,8 +3,8 @@ package com.example.stepcounter.ui.alarming
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.stepcounter.data.Alarm
-import com.example.stepcounter.data.AlarmRepository
+import com.example.stepcounter.data.local.Alarm
+import com.example.stepcounter.data.repository.AlarmRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

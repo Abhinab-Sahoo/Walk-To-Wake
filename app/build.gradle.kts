@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -39,8 +41,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
     }
 }
 
@@ -57,19 +61,19 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // Room
-    implementation ("androidx.room:room-ktx:2.8.3")
-    implementation ("androidx.room:room-runtime:2.8.3")
-    kapt ("androidx.room:room-compiler:2.8.3")
+    implementation (libs.androidx.room.ktx)
+    implementation (libs.androidx.room.runtime)
+    kapt (libs.androidx.room.compiler)
 
     // Lifecycle
-    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.0")
-    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.9.0")
+    implementation (libs.androidx.lifecycle.viewmodel.ktx)
+    implementation (libs.androidx.lifecycle.livedata.ktx)
 
     // Hilt
-    implementation("com.google.dagger:hilt-android:2.57.2")
-    kapt("com.google.dagger:hilt-android-compiler:2.57.2")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
 
     // Nav Args
-    implementation("androidx.navigation:navigation-fragment-ktx:2.9.6")
-    implementation("androidx.navigation:navigation-ui-ktx:2.9.6")
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
 }

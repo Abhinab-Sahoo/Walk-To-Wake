@@ -17,9 +17,8 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.stepcounter.R
-import com.example.stepcounter.data.Alarm
+import com.example.stepcounter.data.local.Alarm
 import com.example.stepcounter.databinding.FragmentAlarmBinding
-import com.example.stepcounter.ui.add_alarm.AddAlarmUiEvent
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -30,7 +29,7 @@ class AlarmFragment : Fragment() {
     private var _binding: FragmentAlarmBinding? = null
     private val binding get() = _binding!!
 
-    private val alarmViewModel: AlarmViewModel by viewModels()
+    private val alarmListViewModel: AlarmListViewModel by viewModels()
 
     private val alarmAdapter = AlarmAdapter(
         clickListener = { alarm ->
@@ -72,16 +71,14 @@ class AlarmFragment : Fragment() {
     }
 
     private fun onAlarmToggled(alarm: Alarm, isChecked: Boolean) {
-        alarmViewModel.toggleAlarm(alarm, isChecked)
+        alarmListViewModel.toggleAlarm(alarm, isChecked)
     }
 
     private fun observeUiEvents() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                alarmViewModel.alarmScheduledEvent.collect { event ->
-                    if (event is AddAlarmUiEvent.ShowToast) {
-                        Toast.makeText(requireContext(), event.message, Toast.LENGTH_SHORT).show()
-                    }
+                alarmListViewModel.toastMessage.collect { message ->
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -90,7 +87,7 @@ class AlarmFragment : Fragment() {
     private fun observeAlarms() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                alarmViewModel.alarms.collect { alarms ->
+                alarmListViewModel.alarms.collect { alarms ->
                     alarmAdapter.submitList(alarms)
 
                     if (alarms.isEmpty()) {
@@ -157,7 +154,7 @@ class AlarmFragment : Fragment() {
 
             when (direction) {
                 ItemTouchHelper.LEFT -> {
-                    alarmViewModel.deleteAlarm(alarm)
+                    alarmListViewModel.deleteAlarm(alarm)
                 }
             }
         }

@@ -1,4 +1,4 @@
-package com.example.stepcounter.data
+package com.example.stepcounter.data.repository
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
 import com.example.stepcounter.MainActivity
+import com.example.stepcounter.data.local.Alarm
+import com.example.stepcounter.data.local.AlarmDao
 import com.example.stepcounter.receiver.AlarmReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -34,6 +36,13 @@ class AlarmRepository @Inject constructor(
         }
     }
 
+    /*
+    scheduleAlarm should be private, anything can call it directly from outside
+    scheduling should only happen through insertAlarm & updateAlarm.
+    Exposing it breaks encapsulation.
+    But if I make it private BootReceiver.kt & AlarmReceiver.kt cannot access it
+    How to fix this issue ?
+     */
     fun scheduleAlarm(alarm: Alarm) {
         val triggerTime = findNextAlarmTime(alarm.hour, alarm.minute, alarm.daysOfWeek)
 
@@ -116,11 +125,26 @@ class AlarmRepository @Inject constructor(
         return alarmDao.getAllAlarms()
     }
 
-    suspend fun getAllAlarmsList(): List<Alarm> {
-        return alarmDao.getAllAlarmsList()
-    }
-
     suspend fun getAlarmById(creationTime: Int): Alarm? {
         return alarmDao.getAlarmById(creationTime)
+    }
+
+    // Called by BootReceiver after reboot.
+    suspend fun rescheduleAllAlarms() {
+        val alarms = alarmDao.getAllAlarmsList()
+        alarms.forEach { alarm ->
+            if (alarm.isEnabled) {
+                scheduleAlarm(alarm)
+            }
+        }
+    }
+
+    // Called by AlarmReceiver to reschedule repeating alarm.
+    suspend fun rescheduleAlarm(alarm: Alarm) {
+        if (alarm.daysOfWeek.isNotEmpty()) {
+            scheduleAlarm(alarm)
+        } else {
+            alarmDao.update(alarm.copy(isEnabled = false))
+        }
     }
 }

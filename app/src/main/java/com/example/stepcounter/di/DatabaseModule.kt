@@ -2,7 +2,7 @@ package com.example.stepcounter.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.stepcounter.data.AlarmDao
+import com.example.stepcounter.data.local.AlarmDao
 import com.example.stepcounter.data.AlarmDatabase
 import dagger.Module
 import dagger.Provides

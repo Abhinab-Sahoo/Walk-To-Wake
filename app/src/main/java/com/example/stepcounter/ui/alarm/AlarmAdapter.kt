@@ -5,7 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.stepcounter.data.Alarm
+import com.example.stepcounter.data.local.Alarm
 import com.example.stepcounter.databinding.AlarmListBinding
 
 class AlarmAdapter(

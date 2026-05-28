@@ -6,7 +6,7 @@
     <data>
         <variable
             name="alarm"
-            type="com.example.stepcounter.data.Alarm" />
+            type="com.example.stepcounter.data.local.Alarm" />
         <import type="android.view.View" />
     </data>
 

@@ -1,4 +1,4 @@
-package com.example.stepcounter.data
+package com.example.stepcounter.data.local
 
 import androidx.room.TypeConverter
 import java.time.DayOfWeek

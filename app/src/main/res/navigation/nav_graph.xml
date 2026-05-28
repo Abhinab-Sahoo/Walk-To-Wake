@@ -21,7 +21,7 @@
         tools:layout="@layout/fragment_add_alarm" >
         <argument
             android:name="alarm"
-            app:argType="com.example.stepcounter.data.Alarm"
+            app:argType="com.example.stepcounter.data.local.Alarm"
             app:nullable="true"
             android:defaultValue="@null" />
     </fragment>
