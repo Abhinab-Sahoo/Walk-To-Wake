@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.stepcounter.data.local.Alarm
 import com.example.stepcounter.data.repository.AlarmRepository
+import com.example.stepcounter.util.AlarmTimeHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -28,8 +29,12 @@ class AlarmListViewModel @Inject constructor(
             val updatedAlarm = alarm.copy(isEnabled = isEnabled)
             alarmRepository.updateAlarm(updatedAlarm)
 
-            val message = if (isEnabled) "${alarm.label} is ON" else "${alarm.label} is OFF"
-            _toastMessage.emit(message)
+            if (isEnabled) {
+                val message = AlarmTimeHelper.getTimeUntilAlarm(
+                    alarm.hour, alarm.minute, alarm.daysOfWeek
+                )
+                _toastMessage.emit(message)
+            }
         }
     }
 
