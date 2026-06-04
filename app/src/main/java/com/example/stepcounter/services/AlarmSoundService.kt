@@ -45,6 +45,13 @@ class AlarmSoundService : Service(), SensorEventListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
+        if (intent?.action == ACTION_STOP_SOUND) {
+            stopAndReleaseMediaPlayer()
+            unRegisterSensorManager()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         // Case 1: Service is restarting after force stop (START_STICKY restarts)
         // Android delivers null intent in this case
         if (intent == null) {
@@ -156,12 +163,26 @@ class AlarmSoundService : Service(), SensorEventListener {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    private fun unRegisterSensorManager() {
+        if (::sensorManager.isInitialized) {
+            sensorManager.unregisterListener(this)
+        }
+    }
+
+    private fun stopAndReleaseMediaPlayer() {
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
-        sensorManager.unregisterListener(this)
+    }
+
+    companion object {
+        const val ACTION_STOP_SOUND = "com.example.stepcounter.ACTION_STOP_SOUND"
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopAndReleaseMediaPlayer()
+        unRegisterSensorManager()
         serviceScope.cancel()
     }
 

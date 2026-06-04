@@ -14,6 +14,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.stepcounter.R
 import com.example.stepcounter.databinding.ActivityAlarmBinding
 import com.example.stepcounter.services.AlarmSoundService
+import com.example.stepcounter.util.SnoozeHelper
 import com.example.stepcounter.util.StepCounterState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -35,6 +36,7 @@ class AlarmActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         observeAlarmData()
+        onSnoozeClicked()
         onDismissClicked()
         observeStepProgress()
 
@@ -53,6 +55,30 @@ class AlarmActivity : AppCompatActivity() {
             )
         }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
+    private fun onSnoozeClicked() {
+        binding.snoozeButton.setOnClickListener {
+            val alarmId = intent.getIntExtra("ALARM_ID", -1)
+            if (alarmId == -1) return@setOnClickListener
+
+            val snoozeIntent = Intent(this, AlarmSoundService::class.java).apply {
+                action = AlarmSoundService.ACTION_STOP_SOUND
+            }
+            startService(snoozeIntent)
+
+            val notificationManager =
+                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(alarmId)
+
+            SnoozeHelper(this).scheduleSnooze(alarmId, 5)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                finishAndRemoveTask()
+            } else {
+                finish()
+            }
+        }
     }
 
     private fun onDismissClicked() {
@@ -86,7 +112,6 @@ class AlarmActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 alarmingViewModel.alarm.collect { alarm ->
                     if (alarm != null) {
-                        binding.digitalClock.text = alarm.formattedHourMinute
                         binding.alarmLabelTextView.text = alarm.label
 
                         if (alarm.steps > 0) {

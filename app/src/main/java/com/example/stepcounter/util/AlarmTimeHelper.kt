@@ -21,7 +21,7 @@ object AlarmTimeHelper {
         val hours = duration.toHours() % 24
         val minutes = duration.toMinutes() % 60
 
-        return buildAlarmMessage(days, hours, minutes, alarmTime, daysOfWeek)
+        return buildAlarmMessage(days, hours, minutes, alarmTime)
     }
 
     private fun findNextAlarmDataTime(
@@ -58,8 +58,7 @@ object AlarmTimeHelper {
         days: Long,
         hours: Long,
         minutes: Long,
-        alarmTime: LocalDateTime,
-        daysOfWeek: Set<DayOfWeek>
+        alarmTime: LocalDateTime
     ) : String {
 
         val timeString = String.format(
@@ -71,7 +70,7 @@ object AlarmTimeHelper {
 
         return when {
             days == 0L && hours == 0L && minutes == 0L -> {
-                "Alarm set for less than a minute from now"
+                "Alarm set for less than 1 minute from now"
             }
             days == 0L && hours > 0L && minutes > 0L -> {
                 "Alarm set for ${hours}h ${minutes}m from now"
@@ -88,7 +87,7 @@ object AlarmTimeHelper {
             days < 7L -> {
                 val dayName = alarmTime.dayOfWeek.name
                     .lowercase()
-                    .replaceFirstChar { it.uppercase() }
+                    .replaceFirstChar { it.uppercaseChar() }
                 "Alarm set for $dayName at $timeString"
             }
             else -> {

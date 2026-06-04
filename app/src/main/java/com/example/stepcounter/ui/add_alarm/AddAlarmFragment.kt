@@ -24,6 +24,7 @@ import com.example.stepcounter.data.local.Alarm
 import com.example.stepcounter.databinding.FragmentAddAlarmBinding
 import com.example.stepcounter.util.DaySelector
 import com.example.stepcounter.util.PermissionHelper
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -152,7 +153,7 @@ class AddAlarmFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 addAlarmViewModel.alarmScheduledEvent.collect { event ->
                     if (event is AddAlarmUiEvent.ShowToast) {
-                        Toast.makeText(requireContext(), event.message, Toast.LENGTH_SHORT).show()
+                        Snackbar.make(binding.root, event.message, Snackbar.LENGTH_SHORT).show()
                         findNavController().navigateUp()
                     }
                 }
