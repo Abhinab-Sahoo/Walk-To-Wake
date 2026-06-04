@@ -21,4 +21,5 @@
     <string name="downward_arrow">Downward Arrow</string>
     <string name="enjoy_your_sleep_nor_tap_below_to_set_an_alarm">Enjoy your sleep!\nOr tap below to set an alarm.</string>
     <string name="no_alarms_yet">No Alarms Yet</string>
+    <string name="snooze">SNOOZE</string>
 </resources>
