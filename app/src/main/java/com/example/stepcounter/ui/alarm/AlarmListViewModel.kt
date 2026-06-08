@@ -19,8 +19,8 @@ class AlarmListViewModel @Inject constructor(
 
     val alarms: Flow<List<Alarm>> = alarmRepository.getAllAlarms()
 
-    private val _toastMessage = MutableSharedFlow<String>()
-    val toastMessage = _toastMessage.asSharedFlow()
+    private val _uiEvent = MutableSharedFlow<UiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
 
     fun toggleAlarm(alarm: Alarm, isEnabled: Boolean) {
 
@@ -33,7 +33,7 @@ class AlarmListViewModel @Inject constructor(
                 val message = AlarmTimeHelper.getTimeUntilAlarm(
                     alarm.hour, alarm.minute, alarm.daysOfWeek
                 )
-                _toastMessage.emit(message)
+                _uiEvent.emit(UiEvent.ShowToast(message))
             }
         }
     }
@@ -41,6 +41,13 @@ class AlarmListViewModel @Inject constructor(
     fun deleteAlarm(alarm: Alarm) {
         viewModelScope.launch {
             alarmRepository.deleteAlarm(alarm)
+            _uiEvent.emit(UiEvent.ShowDeleteUndo(alarm))
+        }
+    }
+
+    fun undoDelete(alarm: Alarm) {
+        viewModelScope.launch {
+            alarmRepository.insertAlarm(alarm)
         }
     }
 
