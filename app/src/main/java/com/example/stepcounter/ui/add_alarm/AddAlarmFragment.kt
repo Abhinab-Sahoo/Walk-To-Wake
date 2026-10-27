@@ -1,9 +1,12 @@
 package com.example.stepcounter.ui.add_alarm
 
 import android.Manifest
+import android.app.Activity
 import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -12,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -81,6 +85,28 @@ class AddAlarmFragment : Fragment() {
             }
         }
 
+    private val ringtoneLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+
+            // result.resultCode tells us if user tapped OK or pressed back
+            if (result.resultCode == Activity.RESULT_OK) {
+
+                // RingtoneManager puts the picked Uri into the Intent data
+                // getParcelableExtra pulls it out - it's a Uri object
+                val uri: Uri? = result.data?.getParcelableExtra(
+                    RingtoneManager.EXTRA_RINGTONE_PICKED_URI
+                )
+
+                // uri can be null here - it means user picked "Silent"
+                // We convert Uri to String for storage (Room saves string not Uri objects)
+                // uri?.toString() returns null if uri is null - so null = silent
+                addAlarmViewModel.onRingtoneSelected(uri?.toString())
+
+                // Update the text field to show the ringtone name
+//                updateRingtoneLabel(uri)
+            }
+        }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -94,6 +120,12 @@ class AddAlarmFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         addAlarmViewModel.initialize(args.alarm)
+
+        binding.ringtoneEditText.setOnClickListener {
+            openRingtonePicker()
+        }
+
+        observeSelectedRingtone()
 
         setupDaySelector()
         observeAlarmData()
@@ -114,6 +146,16 @@ class AddAlarmFragment : Fragment() {
                     alarm?.let {
                         fillUi(it)
                     }
+                }
+            }
+        }
+    }
+
+    private fun observeSelectedRingtone() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                addAlarmViewModel.selectedRingtoneUri.collect { uriString ->
+                    updateRingtoneLabel(uriString)
                 }
             }
         }
@@ -199,6 +241,37 @@ class AddAlarmFragment : Fragment() {
         )
     }
 
+    private fun openRingtonePicker() {
+
+        // Get whatever URI is currently selected in the ViewModel
+        val currentUri: Uri? = addAlarmViewModel.selectedRingtoneUri.value?.toUri() // converts saved string to Uri
+
+        // Build the Intent that opens the system ringtone picker
+        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+
+            // Show only alarm sounds (not ringtone or notifications)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+
+            // Show default options at the top of the list
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+
+            // Show "Silent" options (user may want no sound)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+
+            // What "Default" points to - the device's default alarm sound
+            putExtra(
+                RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            )
+
+            // Pass the currently selected URI so the picker highlights it
+            // Without this, nothing is highlighted when the picker opens
+            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
+        }
+
+        ringtoneLauncher.launch(intent)
+    }
+
     /**
      * Gathers all user input from the UI and tells the ViewModel to schedule the alarm.
      * This is the final step after all permissions are granted.
@@ -209,14 +282,26 @@ class AddAlarmFragment : Fragment() {
         val label = binding.labelEditText.text.toString()
         val steps = binding.stepsEditText.text.toString().toIntOrNull() ?: 0
         val selectedDays = daySelector.getSelectedDays()
+        val ringtoneUri = addAlarmViewModel.selectedRingtoneUri.value
 
         addAlarmViewModel.scheduleAlarm(
             hour = hour,
             minute = minute,
             daysOfWeek = selectedDays,
             label = label,
-            steps = steps
+            steps = steps,
+            ringtoneUri = ringtoneUri
         )
+    }
+
+    private fun updateRingtoneLabel(uriString: String?) {
+        val displayName = when {
+            uriString == null -> getString(R.string.silent)
+            else -> RingtoneManager.getRingtone(requireContext(), uriString.toUri())
+                ?.getTitle(requireContext())
+                ?: getString(R.string.default_alarm_sound)
+        }
+        binding.ringtoneEditText.setText(displayName)
     }
 
     /**

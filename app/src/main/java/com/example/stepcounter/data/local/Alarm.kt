@@ -20,7 +20,8 @@ data class Alarm(
     val daysOfWeek: Set<DayOfWeek>,
     val isEnabled: Boolean,
     val label: String,
-    val steps: Int = 0
+    val steps: Int = 0,
+    val ringtoneUri: String? = null // null means use default alarm sound
 ) : Parcelable {
     val formattedTime: String
         get() {

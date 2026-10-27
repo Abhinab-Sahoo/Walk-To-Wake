@@ -3,7 +3,8 @@ package com.example.stepcounter.di
 import android.content.Context
 import androidx.room.Room
 import com.example.stepcounter.data.local.AlarmDao
-import com.example.stepcounter.data.AlarmDatabase
+import com.example.stepcounter.data.db.AlarmDatabase
+import com.example.stepcounter.data.db.MIGRATION_4_5
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,7 +27,7 @@ object DatabaseModule {
             AlarmDatabase::class.java,
             "alarms"
         )
-            .fallbackToDestructiveMigration(true)
+            .addMigrations(MIGRATION_4_5) // Before 4->5, fallbackToDestructiveMigration() was being used.
             .build()
     }
 
