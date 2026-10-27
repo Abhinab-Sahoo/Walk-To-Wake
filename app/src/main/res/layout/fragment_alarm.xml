@@ -9,6 +9,7 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_margin="8dp"
@@ -23,24 +24,28 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/emptyStateView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:paddingHorizontal="32dp"
-        android:visibility="gone"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.7">
+        app:layout_constraintTop_toTopOf="parent" >
 
         <ImageView
             android:id="@+id/iv_empty_cat"
-            android:layout_width="220dp"
-            android:layout_height="220dp"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:scaleType="fitCenter"
             android:contentDescription="@string/cd_sleeping_cat"
             android:src="@drawable/sleeping_cat"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintHeight_percent="0.35"
+            app:layout_constraintVertical_chainStyle="packed"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/tv_empty_title" />
 
         <TextView
             android:id="@+id/tv_empty_title"
@@ -51,9 +56,10 @@
             android:fontFamily="sans-serif-medium"
             android:textSize="22sp"
             android:textColor="?attr/colorPrimary"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/iv_empty_cat" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/iv_empty_cat"
+            app:layout_constraintBottom_toTopOf="@id/tv_empty_subtitle" />
 
         <TextView
             android:id="@+id/tv_empty_subtitle"
@@ -64,23 +70,10 @@
             android:text="@string/enjoy_your_sleep_nor_tap_below_to_set_an_alarm"
             android:textColor="#757575"
             android:textSize="16sp"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_empty_title" />
-
-        <ImageView
-            android:id="@+id/iv_arrow"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginTop="40dp"
-            android:contentDescription="@string/downward_arrow"
-            android:rotation="180"
-            android:scaleX="-1"
-            app:layout_constraintHorizontal_bias="0.9"
-            android:src="@drawable/undraw_fun_arrow"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_empty_subtitle" />
+            app:layout_constraintTop_toBottomOf="@id/tv_empty_title"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

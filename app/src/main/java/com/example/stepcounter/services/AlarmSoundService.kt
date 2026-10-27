@@ -9,9 +9,10 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.AudioAttributes
 import android.media.MediaPlayer
-import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import androidx.core.net.toUri
 import com.example.stepcounter.data.repository.AlarmRepository
 import com.example.stepcounter.util.AlarmLauncher
 import com.example.stepcounter.util.StepCounterState
@@ -72,7 +73,6 @@ class AlarmSoundService : Service(), SensorEventListener {
         // Case 4: Everything valid - save ID and start normally
         currentAlarmId = alarmId
         startForeground(alarmId, notification)
-        startAlarmSound()
         initializeSensorAndSteps(alarmId)
 
         return START_STICKY
@@ -93,25 +93,25 @@ class AlarmSoundService : Service(), SensorEventListener {
         }
     }
 
-    private fun startAlarmSound() {
-        if (mediaPlayer == null) {
-            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+    private fun startAlarmSound(ringtoneUri: String?) {
+        if (mediaPlayer != null) return
+        if (ringtoneUri == null) return
 
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(this@AlarmSoundService, alarmUri)
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
-                )
-                isLooping = true
-                setOnPreparedListener { player ->
-                    player.start()
-                }
-                prepareAsync()
+        val alarmUri: Uri = ringtoneUri.toUri()
+
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(this@AlarmSoundService, alarmUri)
+            setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            isLooping = true
+            setOnPreparedListener { player ->
+                player.start()
             }
+            prepareAsync()
         }
     }
 
@@ -148,6 +148,8 @@ class AlarmSoundService : Service(), SensorEventListener {
             if (alarm != null) {
                 StepCounterState.reset(alarm.steps)
             }
+
+            startAlarmSound(alarm?.ringtoneUri)
 
             withContext(Dispatchers.Main) {
                 sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager

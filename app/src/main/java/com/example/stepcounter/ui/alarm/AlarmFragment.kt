@@ -1,11 +1,9 @@
 package com.example.stepcounter.ui.alarm
 
-import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -14,7 +12,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.stepcounter.R
 import com.example.stepcounter.data.local.Alarm
 import com.example.stepcounter.databinding.FragmentAlarmBinding
@@ -40,8 +37,6 @@ class AlarmFragment : Fragment() {
         }
     )
 
-    private var arrowAnimator: ObjectAnimator? = null
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -54,9 +49,7 @@ class AlarmFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val itemTouchHelper = ItemTouchHelper(swipeHandler)
-        itemTouchHelper.attachToRecyclerView(binding.recyclerView)
-
+        setupSwipeToDelete()
         observeUiEvents()
         observeAlarms()
         setupFab()
@@ -77,8 +70,18 @@ class AlarmFragment : Fragment() {
     private fun observeUiEvents() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                alarmListViewModel.toastMessage.collect { message ->
-                    Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                alarmListViewModel.uiEvent.collect { event ->
+                    when (event) {
+                        is UiEvent.ShowToast -> {
+                            Snackbar.make(binding.root, event.message, Snackbar.LENGTH_SHORT ).show()
+                        }
+
+                        is UiEvent.ShowDeleteUndo -> {
+                            Snackbar.make(binding.root, "Alarm deleted", Snackbar.LENGTH_LONG)
+                                .setAction("Undo") { alarmListViewModel.undoDelete(event.alarm) }
+                                .show()
+                        }
+                    }
                 }
             }
         }
@@ -103,26 +106,11 @@ class AlarmFragment : Fragment() {
     private fun showEmptyState() {
         binding.emptyStateView.visibility = View.VISIBLE
         binding.recyclerView.visibility = View.GONE
-
-        // Create animation only if not already running
-        if (arrowAnimator == null) {
-            arrowAnimator = ObjectAnimator.ofFloat(binding.ivArrow, "translationY", 0f, 25f).apply {
-                duration = 1000 // 1 second up, 1 second down
-                repeatMode = ObjectAnimator.REVERSE
-                repeatCount = ObjectAnimator.INFINITE
-                interpolator = AccelerateDecelerateInterpolator() // Makes it smooth
-            }
-            arrowAnimator?.start()
-        }
     }
 
     private fun hideEmptyState() {
         binding.emptyStateView.visibility = View.GONE
         binding.recyclerView.visibility = View.VISIBLE
-
-        // Stop animation to save battery
-        arrowAnimator?.cancel()
-        arrowAnimator = null
     }
 
     private fun setupFab() {
@@ -138,27 +126,12 @@ class AlarmFragment : Fragment() {
         }
     }
 
-    private val swipeHandler = object :
-        ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
-
-        override fun onMove(
-            recyclerView: RecyclerView,
-            viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder
-        ): Boolean {
-            return false
-        }
-
-        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-            val position = viewHolder.bindingAdapterPosition
-            if (position == RecyclerView.NO_POSITION) return
+    private fun setupSwipeToDelete() {
+        val callback = SwipeToDeleteCallback(requireContext()) { position ->
             val alarm = alarmAdapter.currentList[position]
-
-            when (direction) {
-                ItemTouchHelper.LEFT -> {
-                    alarmListViewModel.deleteAlarm(alarm)
-                }
-            }
+            alarmListViewModel.deleteAlarm(alarm)
         }
+        ItemTouchHelper(callback).attachToRecyclerView(binding.recyclerView)
     }
 
     override fun onDestroyView() {
